@@ -1,0 +1,37 @@
+{
+  "name": "doudou-agent",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.2.2",
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=11.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "check": "pnpm run check:structure && pnpm run format:check && pnpm run lint:py && pnpm run format:py:check && turbo run lint typecheck test build",
+    "check:structure": "node --test tooling/tests/scaffold.test.mjs",
+    "dev": "turbo run dev --parallel",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "format:py": "uv run ruff format .",
+    "format:py:check": "uv run ruff format --check .",
+    "lint": "pnpm run format:check && pnpm run lint:py && turbo run lint",
+    "lint:py": "uv run ruff check .",
+    "setup:hooks": "git config core.hooksPath .githooks",
+    "test": "pnpm run check:structure && turbo run test",
+    "typecheck": "turbo run typecheck"
+  },
+  "lint-staged": {
+    "*.{js,cjs,mjs,ts,tsx,json,yml,yaml,md}": "prettier --write",
+    "*.py": [
+      "uv run ruff check --fix",
+      "uv run ruff format"
+    ]
+  },
+  "devDependencies": {
+    "lint-staged": "^16.2.6",
+    "prettier": "^3.8.3",
+    "turbo": "^2.9.6"
+  }
+}

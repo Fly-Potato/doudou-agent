@@ -1,0 +1,36 @@
+# JavaScript and Turborepo
+node_modules/
+.pnpm-store/
+.turbo/
+
+# Python and uv
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# React Native
+android/.gradle/
+android/app/build/
+ios/Pods/
+ios/build/
+
+# Tauri and Rust
+target/
+src-tauri/target/
+
+# Generic build output and secrets
+dist/
+build/
+coverage/
+.env
+.env.*
+!.env.example
+
+# Operating-system and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

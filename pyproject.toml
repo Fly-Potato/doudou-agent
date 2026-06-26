@@ -1,0 +1,26 @@
+[project]
+name = "doudou-agent-workspace"
+version = "0.0.0"
+description = "Repository-level Python tooling for the doudou-agent monorepo."
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "ruff>=0.12.0",
+]
+
+[tool.uv]
+package = false
+default-groups = ["dev"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["services", "libs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.format]
+quote-style = "single"

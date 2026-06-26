@@ -1,0 +1,12 @@
+.git/
+.github/
+.pnpm-store/
+.turbo/
+.venv/
+coverage/
+dist/
+build/
+node_modules/
+target/
+uv.lock
+pnpm-lock.yaml
