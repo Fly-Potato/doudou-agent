@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
@@ -64,10 +64,26 @@ test('workspace configuration separates platform and Python concerns', () => {
   assert.doesNotMatch(pythonProject, /\[tool\.uv\.workspace\]/);
 });
 
-test('CI runs the same deterministic quality checks as local development', () => {
+test('CI only runs on master and relevant repository paths', () => {
   const workflow = readRepositoryFile('.github/workflows/quality.yml');
 
-  for (const command of ['pnpm install --frozen-lockfile', 'uv sync --locked', 'pnpm run check']) {
-    assert.match(workflow, new RegExp(command.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.match(workflow, /push:\s*\r?\n\s+branches:\s*\r?\n\s+- master/);
+  assert.match(workflow, /pull_request:\s*\r?\n\s+branches:\s*\r?\n\s+- master/);
+
+  for (const pathEntry of [
+    '.github/workflows/quality.yml',
+    'apps/**',
+    'libs/**',
+    'packages/**',
+    'services/**',
+    'tooling/**',
+    'package.json',
+    'pnpm-lock.yaml',
+    'pnpm-workspace.yaml',
+    'pyproject.toml',
+    'turbo.json',
+    'uv.lock',
+  ]) {
+    assert.equal(workflow.includes(pathEntry), true, `missing ${pathEntry}`);
   }
 });

@@ -1,33 +1,63 @@
-name: Quality
-
-on:
-  push:
-  pull_request:
-
-permissions:
-  contents: read
-
-jobs:
-  quality:
-    name: ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v6
-        with:
-          version: 11
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: pnpm
-      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
-        with:
-          python-version: '3.12'
-          enable-cache: true
-      - run: pnpm install --frozen-lockfile
-      - run: uv sync --locked
+name: Quality 
+ 
+on: 
+  push: 
+    branches: 
+      - master 
+    paths: 
+      - '.github/workflows/quality.yml' 
+      - 'apps/**' 
+      - 'libs/**' 
+      - 'packages/**' 
+      - 'services/**' 
+      - 'tooling/**' 
+      - 'package.json' 
+      - 'pnpm-lock.yaml' 
+      - 'pnpm-workspace.yaml' 
+      - 'pyproject.toml' 
+      - 'turbo.json' 
+      - 'uv.lock' 
+  pull_request: 
+    branches: 
+      - master 
+    paths: 
+      - '.github/workflows/quality.yml' 
+      - 'apps/**' 
+      - 'libs/**' 
+      - 'packages/**' 
+      - 'services/**' 
+      - 'tooling/**' 
+      - 'package.json' 
+      - 'pnpm-lock.yaml' 
+      - 'pnpm-workspace.yaml' 
+      - 'pyproject.toml' 
+      - 'turbo.json' 
+      - 'uv.lock' 
+ 
+permissions: 
+  contents: read 
+ 
+jobs: 
+  quality: 
+    name: ${{ matrix.os }} 
+    runs-on: ${{ matrix.os }} 
+    strategy: 
+      fail-fast: false 
+      matrix: 
+        os: [ubuntu-latest, macos-latest, windows-latest] 
+    steps: 
+      - uses: actions/checkout@v6 
+      - uses: pnpm/action-setup@v6 
+        with: 
+          version: 11 
+      - uses: actions/setup-node@v6 
+        with: 
+          node-version: 24 
+          cache: pnpm 
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0 
+        with: 
+          python-version: '3.12' 
+          enable-cache: true 
+      - run: pnpm install --frozen-lockfile 
+      - run: uv sync --locked 
       - run: pnpm run check
