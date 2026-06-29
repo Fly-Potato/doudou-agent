@@ -39,6 +39,8 @@
 
 ## 质量要求
 
-- JavaScript/TypeScript 使用 pnpm 和 Turborepo；Python 使用 uv 和 Ruff。
+- JavaScript/TypeScript 使用 `mise` 管理的 Node 和 pnpm 运行环境，并配合 Turborepo；Python 使用 uv 和 Ruff。
+- 在执行前端或脚本类命令前，优先确认 `mise` 已初始化并由其提供 `node`、`pnpm`；如果当前 shell 没有自动接管环境，就使用 `mise exec -- <command>` 运行。
+- 不要在仓库内额外固定全局 Node 或 pnpm 版本，也不要绕过 `mise.toml` 直接依赖系统环境。
 - 在根目录执行 `pnpm run check` 进行结构、格式和质量检查；按任务影响范围补充对应测试。
 - 涉及认证或连接协议的修改，至少覆盖令牌缺失、令牌错误、令牌泄露防护、连接失败和流式中断场景。
