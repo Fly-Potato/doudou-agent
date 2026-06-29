@@ -10,6 +10,9 @@ dev = [
   "ruff>=0.12.0",
 ]
 
+[tool.uv.workspace]
+members = ["services/*", "libs/*"]
+
 [tool.uv]
 package = false
 default-groups = ["dev"]

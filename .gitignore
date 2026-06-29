@@ -29,6 +29,9 @@ coverage/
 .env.*
 !.env.example
 
+# Superpowers design docs (AI agent workflow artifacts)
+docs/superpowers/
+
 # Operating-system and editor files
 .DS_Store
 Thumbs.db
