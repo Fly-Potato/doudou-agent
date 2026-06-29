@@ -9,7 +9,7 @@ from agent_server.plugin.registry import ToolRegistry
 
 logger = logging.getLogger(__name__)
 
-ENTRY_POINT_GROUP = "doudou_agent.plugins"
+ENTRY_POINT_GROUP = 'doudou_agent.plugins'
 
 
 class PluginManager:
@@ -42,14 +42,14 @@ class PluginManager:
             plugin_cls = ep.load()
             if issubclass(plugin_cls, Plugin):
                 discovered.append(plugin_cls)
-                logger.info("发现插件: %s (%s)", ep.name, plugin_cls.__name__)
+                logger.info('发现插件: %s (%s)', ep.name, plugin_cls.__name__)
 
         return discovered
 
     async def load_enabled(self, plugin_configs: list[dict[str, Any]]) -> list[Plugin]:
         """加载配置中 enabled 的插件"""
-        enabled_names = {pc["name"] for pc in plugin_configs if pc.get("enabled", True)}
-        configs_by_name = {pc["name"]: pc.get("config", {}) for pc in plugin_configs}
+        enabled_names = {pc['name'] for pc in plugin_configs if pc.get('enabled', True)}
+        configs_by_name = {pc['name']: pc.get('config', {}) for pc in plugin_configs}
 
         discovered = self.discover()
 

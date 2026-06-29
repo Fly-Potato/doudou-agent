@@ -18,7 +18,7 @@ class SessionManager:
         history = self.get_history(session_id)
         history.append(message)
         if len(history) > self._max_messages:
-            self._sessions[session_id] = history[-self._max_messages:]
+            self._sessions[session_id] = history[-self._max_messages :]
 
     def remove_session(self, session_id: SessionId) -> None:
         self._sessions.pop(session_id, None)

@@ -17,14 +17,14 @@ class Message:
         self.tool_calls = tool_calls
 
     def to_dict(self) -> dict[str, Any]:
-        msg: dict[str, Any] = {"role": self.role}
+        msg: dict[str, Any] = {'role': self.role}
         if self.content is not None:
-            msg["content"] = self.content
+            msg['content'] = self.content
         if self.tool_calls is not None:
-            msg["tool_calls"] = self.tool_calls
+            msg['tool_calls'] = self.tool_calls
         if self.tool_call_id is not None:
-            msg["tool_call_id"] = self.tool_call_id
+            msg['tool_call_id'] = self.tool_call_id
         return msg
 
     def __repr__(self) -> str:
-        return f"Message(role={self.role!r}, content={self.content!r})"
+        return f'Message(role={self.role!r}, content={self.content!r})'

@@ -26,11 +26,11 @@ class ToolRegistry:
         """返回 OpenAI function-calling 格式的工具列表"""
         return [
             {
-                "type": "function",
-                "function": {
-                    "name": t.name,
-                    "description": t.description,
-                    "parameters": t.parameters,
+                'type': 'function',
+                'function': {
+                    'name': t.name,
+                    'description': t.description,
+                    'parameters': t.parameters,
                 },
             }
             for t in self._tools.values()

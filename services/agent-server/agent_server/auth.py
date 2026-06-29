@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 def _mask_token(token: str) -> str:
     if len(token) <= 6:
-        return "***"
-    return token[:4] + "***"
+        return '***'
+    return token[:4] + '***'
 
 
 class TokenAuth:
@@ -25,17 +25,13 @@ class TokenAuth:
         if not self._token_hash:
             return
 
-        auth_header = request.headers.get("Authorization", "")
-        if not auth_header.startswith("Bearer "):
-            logger.warning("认证失败: 缺少 Authorization 头")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="缺少认证令牌"
-            )
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            logger.warning('认证失败: 缺少 Authorization 头')
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='缺少认证令牌')
 
-        token = auth_header.removeprefix("Bearer ")
+        token = auth_header.removeprefix('Bearer ')
         computed = hashlib.sha256(token.encode()).hexdigest()
         if computed != self._token_hash:
-            logger.warning("认证失败: token=%s", _mask_token(token))
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="认证令牌无效"
-            )
+            logger.warning('认证失败: token=%s', _mask_token(token))
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='认证令牌无效')

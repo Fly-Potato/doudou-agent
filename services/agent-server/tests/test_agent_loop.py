@@ -11,8 +11,8 @@ import pytest
 from agent_server.agent.loop import AgentLoop
 from agent_server.config import AppConfig
 from agent_server.event import EventBus
-from agent_server.plugin.registry import ToolRegistry
 from agent_server.plugin.base import Tool
+from agent_server.plugin.registry import ToolRegistry
 from agent_server.types import SessionId
 
 
@@ -45,8 +45,8 @@ class TestAgentLoop:
     async def test_basic_text_response(self) -> None:
         provider = MockProvider(
             [
-                {"type": "token", "content": "你好，"},
-                {"type": "token", "content": "有什么可以帮你的？"},
+                {'type': 'token', 'content': '你好，'},
+                {'type': 'token', 'content': '有什么可以帮你的？'},
             ]
         )
 
@@ -58,26 +58,26 @@ class TestAgentLoop:
             loop = AgentLoop(config, registry, event_bus)
 
         events: list[str] = []
-        async for event_str in loop.run("sess-1", "你好"):
+        async for event_str in loop.run('sess-1', '你好'):
             events.append(event_str)
 
-        token_events = [e for e in events if e.startswith("event: token")]
-        done_events = [e for e in events if e.startswith("event: done")]
+        token_events = [e for e in events if e.startswith('event: token')]
+        done_events = [e for e in events if e.startswith('event: done')]
         assert len(token_events) == 2
         assert len(done_events) == 1
 
     @pytest.mark.asyncio
     async def test_tool_calling_flow(self) -> None:
         async def echo_handler(session_id: SessionId, **params: object) -> dict:
-            return {"echo": params.get("text", "")}
+            return {'echo': params.get('text', '')}
 
         tool = Tool(
-            name="echo",
-            description="回显",
+            name='echo',
+            description='回显',
             parameters={
-                "type": "object",
-                "properties": {"text": {"type": "string"}},
-                "required": ["text"],
+                'type': 'object',
+                'properties': {'text': {'type': 'string'}},
+                'required': ['text'],
             },
             handler=echo_handler,
         )
@@ -89,14 +89,14 @@ class TestAgentLoop:
             # 第一次调用 LLM: 返回 tool_calls
             [
                 {
-                    "type": "tool_calls",
-                    "calls": [
+                    'type': 'tool_calls',
+                    'calls': [
                         {
-                            "id": "call_1",
-                            "type": "function",
-                            "function": {
-                                "name": "echo",
-                                "arguments": json.dumps({"text": "hello"}),
+                            'id': 'call_1',
+                            'type': 'function',
+                            'function': {
+                                'name': 'echo',
+                                'arguments': json.dumps({'text': 'hello'}),
                             },
                         }
                     ],
@@ -104,7 +104,7 @@ class TestAgentLoop:
             ],
             # 第二次调用 LLM: 返回最终文本
             [
-                {"type": "token", "content": "回显结果: hello"},
+                {'type': 'token', 'content': '回显结果: hello'},
             ],
         )
 
@@ -115,13 +115,13 @@ class TestAgentLoop:
             loop = AgentLoop(config, registry, event_bus)
 
         events: list[str] = []
-        async for event_str in loop.run("sess-2", "帮我回显 hello"):
+        async for event_str in loop.run('sess-2', '帮我回显 hello'):
             events.append(event_str)
 
-        tool_call_events = [e for e in events if "event: tool_call" in e]
-        tool_result_events = [e for e in events if "event: tool_result" in e]
-        token_events = [e for e in events if e.startswith("event: token")]
-        done_events = [e for e in events if e.startswith("event: done")]
+        tool_call_events = [e for e in events if 'event: tool_call' in e]
+        tool_result_events = [e for e in events if 'event: tool_result' in e]
+        token_events = [e for e in events if e.startswith('event: token')]
+        done_events = [e for e in events if e.startswith('event: done')]
 
         assert len(tool_call_events) == 1
         assert len(tool_result_events) == 1
@@ -134,14 +134,14 @@ class TestAgentLoop:
             *(
                 [
                     {
-                        "type": "tool_calls",
-                        "calls": [
+                        'type': 'tool_calls',
+                        'calls': [
                             {
-                                "id": f"call_{i}",
-                                "type": "function",
-                                "function": {
-                                    "name": "echo",
-                                    "arguments": json.dumps({"text": "x"}),
+                                'id': f'call_{i}',
+                                'type': 'function',
+                                'function': {
+                                    'name': 'echo',
+                                    'arguments': json.dumps({'text': 'x'}),
                                 },
                             }
                         ],
@@ -152,12 +152,12 @@ class TestAgentLoop:
         )
 
         async def echo_handler(session_id: SessionId, **params: object) -> dict:
-            return {"ok": True}
+            return {'ok': True}
 
         tool = Tool(
-            name="echo",
-            description="",
-            parameters={"type": "object", "properties": {"text": {"type": "string"}}},
+            name='echo',
+            description='',
+            parameters={'type': 'object', 'properties': {'text': {'type': 'string'}}},
             handler=echo_handler,
         )
 
@@ -171,8 +171,8 @@ class TestAgentLoop:
             loop = AgentLoop(config, registry, event_bus)
 
         events: list[str] = []
-        async for event_str in loop.run("sess-3", "test"):
+        async for event_str in loop.run('sess-3', 'test'):
             events.append(event_str)
 
-        error_events = [e for e in events if "MAX_ROUNDS" in e]
+        error_events = [e for e in events if 'MAX_ROUNDS' in e]
         assert len(error_events) == 1

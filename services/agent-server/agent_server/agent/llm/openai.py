@@ -24,7 +24,7 @@ class OpenAIProvider(LLMProvider):
             messages=messages,
             tools=tools if tools else openai.NOT_GIVEN,
             stream=True,
-            stream_options={"include_usage": True},
+            stream_options={'include_usage': True},
             **self._extra_kwargs,
         )
 
@@ -37,28 +37,28 @@ class OpenAIProvider(LLMProvider):
                 continue
 
             if delta.content:
-                yield {"type": "token", "content": delta.content}
+                yield {'type': 'token', 'content': delta.content}
 
             if delta.tool_calls:
                 for tc in delta.tool_calls:
                     idx = tc.index
                     if idx not in accumulated_tool_calls:
                         accumulated_tool_calls[idx] = {
-                            "id": "",
-                            "type": "function",
-                            "function": {"name": "", "arguments": ""},
+                            'id': '',
+                            'type': 'function',
+                            'function': {'name': '', 'arguments': ''},
                         }
                     entry = accumulated_tool_calls[idx]
                     if tc.id:
-                        entry["id"] = tc.id
+                        entry['id'] = tc.id
                     if tc.function:
                         if tc.function.name:
-                            entry["function"]["name"] += tc.function.name
+                            entry['function']['name'] += tc.function.name
                         if tc.function.arguments:
-                            entry["function"]["arguments"] += tc.function.arguments
+                            entry['function']['arguments'] += tc.function.arguments
 
         if accumulated_tool_calls:
             yield {
-                "type": "tool_calls",
-                "calls": list(accumulated_tool_calls.values()),
+                'type': 'tool_calls',
+                'calls': list(accumulated_tool_calls.values()),
             }

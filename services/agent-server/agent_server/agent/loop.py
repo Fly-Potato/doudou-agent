@@ -40,7 +40,7 @@ class AgentLoop:
 
         try:
             # 1-2. 接收消息，运行 on_message 钩子
-            message: dict[str, Any] = {"role": "user", "content": user_content}
+            message: dict[str, Any] = {'role': 'user', 'content': user_content}
             message = await self._event_bus.on_message(session_id, message)
             self._sessions.add_message(session_id, Message(**message))
 
@@ -52,21 +52,19 @@ class AgentLoop:
 
                 # 5. 调用 LLM
                 tools = self._registry.list_definitions()
-                full_content = ""
+                full_content = ''
                 tool_calls: list[dict[str, Any]] | None = None
 
                 async for chunk in self._provider.chat_completion(messages, tools):
-                    if chunk["type"] == "token":
-                        full_content += chunk["content"]
+                    if chunk['type'] == 'token':
+                        full_content += chunk['content']
+                        data = json.dumps({'content': chunk['content']}, ensure_ascii=False)
+                        yield f'event: token\ndata: {data}\n\n'
+                    elif chunk['type'] == 'tool_calls':
+                        tool_calls = chunk['calls']
                         yield (
-                            "event: token\n"
-                            f"data: {json.dumps({'content': chunk['content']}, ensure_ascii=False)}\n\n"
-                        )
-                    elif chunk["type"] == "tool_calls":
-                        tool_calls = chunk["calls"]
-                        yield (
-                            "event: tool_call\n"
-                            f"data: {json.dumps({'calls': tool_calls}, ensure_ascii=False)}\n\n"
+                            'event: tool_call\n'
+                            f'data: {json.dumps({"calls": tool_calls}, ensure_ascii=False)}\n\n'
                         )
 
                 if tool_calls:
@@ -75,64 +73,59 @@ class AgentLoop:
                     self._sessions.add_message(
                         session_id,
                         Message(
-                            role="assistant",
+                            role='assistant',
                             content=full_content or None,
                             tool_calls=tool_calls,
                         ),
                     )
 
                     for tc in tool_calls:
-                        name = tc["function"]["name"]
+                        name = tc['function']['name']
                         tool = self._registry.get(name)
                         if tool is None:
                             tool_result = f"工具 '{name}' 未找到"
                         else:
                             try:
-                                arguments = json.loads(tc["function"]["arguments"])
+                                arguments = json.loads(tc['function']['arguments'])
                                 result = await asyncio.wait_for(
                                     tool.handler(session_id, **arguments),
                                     timeout=timeout,
                                 )
                                 tool_result = json.dumps(result, ensure_ascii=False)
-                            except asyncio.TimeoutError:
+                            except TimeoutError:
                                 tool_result = f"工具 '{name}' 执行超时"
                             except Exception as e:
                                 tool_result = f"工具 '{name}' 执行出错: {e}"
 
-                        yield (
-                            "event: tool_result\n"
-                            f"data: {json.dumps({'tool': name, 'result': tool_result}, ensure_ascii=False)}\n\n"
-                        )
+                        data = json.dumps({'tool': name, 'result': tool_result}, ensure_ascii=False)
+                        yield f'event: tool_result\ndata: {data}\n\n'
                         self._sessions.add_message(
                             session_id,
                             Message(
-                                role="tool",
+                                role='tool',
                                 content=tool_result,
-                                tool_call_id=tc["id"],
+                                tool_call_id=tc['id'],
                             ),
                         )
                 else:
                     # 7-9. 文本响应
                     self._sessions.add_message(
                         session_id,
-                        Message(role="assistant", content=full_content),
+                        Message(role='assistant', content=full_content),
                     )
                     yield (
-                        "event: done\n"
-                        f"data: {json.dumps({'session_id': session_id}, ensure_ascii=False)}\n\n"
+                        'event: done\n'
+                        f'data: {json.dumps({"session_id": session_id}, ensure_ascii=False)}\n\n'
                     )
                     return
 
             # 超过最大工具调用轮数
-            yield (
-                "event: error\n"
-                f"data: {json.dumps({'code': 'MAX_ROUNDS', 'message': '工具调用轮数超限'}, ensure_ascii=False)}\n\n"
-            )
+            err = {'code': 'MAX_ROUNDS', 'message': '工具调用轮数超限'}
+            data = json.dumps(err, ensure_ascii=False)
+            yield f'event: error\ndata: {data}\n\n'
 
         except Exception as e:
-            logger.exception("AgentLoop 出错: session=%s", session_id)
+            logger.exception('AgentLoop 出错: session=%s', session_id)
             await self._event_bus.on_error(session_id, e)
-            yield (
-                "event: error\n"
-                f"data: {json.dumps({'code': 'INTERNAL_ERROR', 'message': str(e)}, ensure_ascii=False)}\n\n"
-            )
+            data = json.dumps({'code': 'INTERNAL_ERROR', 'message': str(e)}, ensure_ascii=False)
+            yield f'event: error\ndata: {data}\n\n'

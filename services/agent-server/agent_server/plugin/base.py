@@ -30,11 +30,13 @@ class Plugin(ABC):
         """返回插件提供的工具列表，中枢在加载时调用一次"""
         ...
 
-    async def on_load(self, config: dict[str, Any]) -> None:
+    async def on_load(self, config: dict[str, Any]) -> None:  # noqa: B027
         """插件加载时调用，传入该插件在 YAML 中声明的配置"""
+        ...
 
-    async def on_shutdown(self) -> None:
+    async def on_shutdown(self) -> None:  # noqa: B027
         """服务关闭时调用，释放资源"""
+        ...
 
     async def on_message(
         self, session_id: SessionId, message: dict[str, Any]
@@ -54,5 +56,6 @@ class Plugin(ABC):
         """LLM 返回后调用，可修改响应"""
         return response
 
-    async def on_error(self, session_id: SessionId, error: Exception) -> None:
+    async def on_error(self, session_id: SessionId, error: Exception) -> None:  # noqa: B027
         """任何环节出错时调用，用于日志/告警"""
+        ...

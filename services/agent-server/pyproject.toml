@@ -19,7 +19,10 @@ where = ["."]
 include = ["agent_server*"]
 
 [dependency-groups]
-dev = ["pytest>=8.0"]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=1.4.0",
+]
 
 [tool.ruff]
 line-length = 100
