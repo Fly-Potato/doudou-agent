@@ -1,5 +1,7 @@
 # doudou-agent
 
+> ⚠️ 项目处于早期开发阶段。API、配置格式、插件接口均可能发生不兼容变更。
+
 Platform-only monorepo foundation for future Python services and libraries, React Native mobile
 applications, and Tauri desktop applications. This repository intentionally contains no application,
 service, package, Cargo crate, Android project, iOS project, or Tauri `src-tauri` directory.
@@ -22,12 +24,54 @@ is the Python lockfile.
 | ----------- | ------------------------------------------------------------------------------------------------ |
 | `apps/`     | Product applications, such as `<product>-mobile` (React Native) and `<product>-desktop` (Tauri). |
 | `packages/` | Platform-neutral TypeScript packages.                                                            |
-| `services/` | Deployable Python services.                                                                      |
+| `services/` | Deployable Python services。当前：`agent-server` AI 后端服务。                                      |
 | `libs/`     | Reusable Python libraries.                                                                       |
 | `tooling/`  | Repository checks and maintenance tooling.                                                       |
 
 React Native and Tauri applications do not share UI packages. A shared TypeScript package must not
 depend on browser APIs, React Native APIs, Android/iOS code, Tauri APIs, or Rust bindings.
+
+## agent-server
+
+`services/agent-server/` 是 doudou-agent 的 AI 后端服务，采用插件式架构设计：
+
+- **中枢** 负责对话循环、LLM 调用、工具调度和 SSE 流式响应
+- **插件** 通过 Python entry_points 注册工具（Tool）和技能（Skill），支持自由开发
+- **Skill** 按需加载的领域能力单元，含操作指令和关联工具，LLM 运行时决定激活
+- **MCP** 内置插件支持连接 Model Context Protocol 服务器，自动发现外部工具
+
+### 快速开始
+
+```bash
+cd services/agent-server
+# 编辑 agent-server.yaml，填入 llm.api_key
+uv sync
+uv run python -m agent_server.main
+```
+
+### 开发插件
+
+1. 新建 Python 包，继承 `agent_server.plugin.base.Plugin`
+2. 实现 `name`、`register_tools()`，可选 `register_skills()` 和生命周期钩子
+3. 在 `pyproject.toml` 注册 entry_point：
+
+```toml
+[project.entry-points."doudou_agent.plugins"]
+my-plugin = "my_plugin.module:MyPlugin"
+```
+
+4. 在 `agent-server.yaml` 中启用：
+
+```yaml
+plugins:
+  - name: my-plugin
+    enabled: true
+    config: {}
+```
+
+### 技术栈
+
+Python 3.12+, FastAPI, openai SDK, PyYAML, MCP SDK
 
 ## First-time setup
 
