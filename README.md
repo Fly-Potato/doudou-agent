@@ -24,7 +24,7 @@ is the Python lockfile.
 | ----------- | ------------------------------------------------------------------------------------------------ |
 | `apps/`     | Product applications, such as `<product>-mobile` (React Native) and `<product>-desktop` (Tauri). |
 | `packages/` | Platform-neutral TypeScript packages.                                                            |
-| `services/` | Deployable Python services。当前：`agent-server` AI 后端服务。                                      |
+| `services/` | Deployable Python services。当前：`agent-server` AI 后端服务。                                   |
 | `libs/`     | Reusable Python libraries.                                                                       |
 | `tooling/`  | Repository checks and maintenance tooling.                                                       |
 
@@ -44,9 +44,12 @@ depend on browser APIs, React Native APIs, Android/iOS code, Tauri APIs, or Rust
 
 ```bash
 cd services/agent-server
-# 编辑 agent-server.yaml，填入 llm.api_key
+# 1. 编辑 agent-server.yaml，填入 llm.api_key
+# 2. 生成访问令牌
 uv sync
-uv run python -m agent_server.main
+uv run agent-server generate-token   # 输出原始 token，请求 API 时使用
+# 3. 启动服务
+uv run agent-server serve
 ```
 
 ### 开发插件
@@ -71,7 +74,7 @@ plugins:
 
 ### 技术栈
 
-Python 3.12+, FastAPI, openai SDK, PyYAML, MCP SDK
+Python 3.12+, FastAPI, openai SDK, PyYAML, MCP SDK, SQLAlchemy 2.0, aiosqlite (开发), asyncpg (生产)
 
 ## First-time setup
 

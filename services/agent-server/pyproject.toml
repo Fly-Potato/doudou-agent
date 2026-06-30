@@ -12,6 +12,9 @@ dependencies = [
     "uvicorn[standard]>=0.34.0",
     "openai>=1.0.0",
     "pyyaml>=6.0",
+    "sqlalchemy[asyncio]>=2.0",
+    "aiosqlite>=0.20",
+    "asyncpg>=0.30",
 ]
 
 [tool.setuptools.packages.find]
@@ -23,6 +26,9 @@ dev = [
     "pytest>=8.0",
     "pytest-asyncio>=1.4.0",
 ]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
 
 [tool.ruff]
 line-length = 100

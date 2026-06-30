@@ -31,7 +31,7 @@ class SessionConfig:
 
 @dataclass
 class AuthConfig:
-    token_hash: str = ''
+    db_url: str = ''
 
 
 @dataclass
@@ -97,7 +97,7 @@ def load_config(path: str = 'agent-server.yaml') -> AppConfig:
 
     if 'auth' in data:
         a = data['auth']
-        app.auth = AuthConfig(token_hash=a.get('token_hash', ''))
+        app.auth = AuthConfig(db_url=a.get('db_url', ''))
 
     if 'plugins' in data:
         app.plugins = [

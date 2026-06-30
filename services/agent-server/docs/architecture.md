@@ -41,7 +41,7 @@ agent-server 是 doudou-agent 的 AI 后端服务，采用**插件式架构**。
 - `GET /health` — 健康检查
 - `POST /chat` — 对话端点，接收 `{"session_id": "...", "content": "..."}`，返回 SSE 流
 - 启动时通过 `lifespan` 上下文管理器加载插件，关闭时调用 `on_shutdown`
-- 认证通过 `TokenAuth` middleware 实现，可配置 SHA-256 token 验证
+- 认证通过 `TokenAuth` middleware 实现，从数据库查询 token 进行 SHA-256 哈希比对
 
 ### 2.2 AgentLoop — AI 对话循环
 
@@ -72,11 +72,11 @@ SSE 流 (token → tool_call → tool_result → done)
 
 **超时与限制：**
 
-| 配置项 | 默认值 | 说明 |
-|--------|--------|------|
-| `session.max_tool_rounds` | 10 | 单条消息最大工具调用轮数 |
-| `session.tool_timeout_sec` | 30 | 单个工具执行超时（秒） |
-| `session.history_max_messages` | 50 | 会话保留的最大消息数 |
+| 配置项                         | 默认值 | 说明                     |
+| ------------------------------ | ------ | ------------------------ |
+| `session.max_tool_rounds`      | 10     | 单条消息最大工具调用轮数 |
+| `session.tool_timeout_sec`     | 30     | 单个工具执行超时（秒）   |
+| `session.history_max_messages` | 50     | 会话保留的最大消息数     |
 
 ### 2.3 PluginManager — 插件管理器
 
@@ -222,21 +222,50 @@ event: done\ndata: {"session_id": "s1"}\n\n
 event: error\ndata: {"code": "MAX_ROUNDS", "message": "工具调用轮数超限"}\n\n
 ```
 
-| 事件 | 方向 | 说明 |
-|------|------|------|
-| `token` | 服务端→客户端 | LLM 回复的文本片段（可能多次） |
-| `tool_call` | 服务端→客户端 | LLM 调用了某个工具 |
-| `tool_result` | 服务端→客户端 | 工具执行结果 |
-| `done` | 服务端→客户端 | 本轮对话完成 |
-| `error` | 服务端→客户端 | 出错，`code` 标识错误类型 |
+| 事件          | 方向          | 说明                           |
+| ------------- | ------------- | ------------------------------ |
+| `token`       | 服务端→客户端 | LLM 回复的文本片段（可能多次） |
+| `tool_call`   | 服务端→客户端 | LLM 调用了某个工具             |
+| `tool_result` | 服务端→客户端 | 工具执行结果                   |
+| `done`        | 服务端→客户端 | 本轮对话完成                   |
+| `error`       | 服务端→客户端 | 出错，`code` 标识错误类型      |
 
 ## 4. 认证
 
-- 请求头 `Authorization: Bearer <token>`
-- 中枢对 token 做 SHA-256 比对 `auth.token_hash` 配置值
-- 未配置 `token_hash` 时跳过认证
+- `auth.db_url` 配置数据库连接（默认 `sqlite+aiosqlite:///tokens.db`），**留空则跳过认证**
+- 请求头 `Authorization: Bearer <token>`，中枢通过 `TokenStore` 对 token 做 SHA-256 哈希后查询数据库
 - 认证失败返回 HTTP 401
 - 日志中仅输出脱敏 token（前 4 位 + `***`），不输出完整令牌
+
+### 4.1 CLI 令牌管理
+
+`agent-server` 提供 4 个子命令：
+
+| 命令                | 说明                                   |
+| ------------------- | -------------------------------------- |
+| `serve`             | 启动 HTTP 服务                         |
+| `generate-token`    | 生成新令牌，输出原始值（仅此一次可见） |
+| `list-tokens`       | 列出所有令牌 ID 和创建时间             |
+| `delete-token <id>` | 按 ID 删除指定令牌                     |
+
+### 4.2 数据库模型
+
+使用 SQLAlchemy ORM，单表存储：
+
+```python
+class Token(Base):
+    __tablename__ = 'tokens'
+    id: int          # 主键自增
+    token_hash: str  # SHA-256 哈希，唯一索引
+    created_at: datetime  # 创建时间
+```
+
+SQLAlchemy 的 `db_url` 前缀决定数据库类型：
+
+| 前缀                                     | 用途             |
+| ---------------------------------------- | ---------------- |
+| `sqlite+aiosqlite:///tokens.db`          | 开发环境（默认） |
+| `postgresql+asyncpg://user:pass@host/db` | 生产环境         |
 
 ## 5. 目录结构
 
@@ -253,12 +282,15 @@ services/agent-server/
 │   ├── conftest.py                   # DummyPlugin 测试夹具
 │   ├── test_plugin_manager.py        # ToolRegistry + PluginManager 测试
 │   ├── test_agent_loop.py            # AgentLoop 测试
-│   └── test_auth.py                  # TokenAuth + /health 测试
+│   ├── test_auth.py                  # TokenAuth 测试
+│   └── test_token_store.py           # TokenStore CRUD 测试
 └── agent_server/
     ├── __init__.py                   # 包标记
-    ├── main.py                       # FastAPI 应用，SSE 端点
+    ├── main.py                       # FastAPI 应用，SSE 端点 + CLI 子命令
     ├── config.py                     # YAML 配置加载 + ${ENV} 替换
-    ├── auth.py                       # Token 认证
+    ├── auth.py                       # TokenAuth — 数据库令牌认证
+    ├── models.py                     # Token ORM 模型（SQLAlchemy）
+    ├── token_store.py                # TokenStore — 令牌 CRUD
     ├── types.py                      # 共享类型
     ├── event.py                      # EventBus 钩子总线
     │
@@ -284,33 +316,33 @@ services/agent-server/
 # agent-server.yaml
 
 server:
-  host: "0.0.0.0"          # 监听地址，默认 0.0.0.0
-  port: 8000                # 监听端口，默认 8000
+  host: '0.0.0.0' # 监听地址，默认 0.0.0.0
+  port: 8000 # 监听端口，默认 8000
 
 llm:
-  type: openai              # Provider 类型：openai | anthropic（预留）
-  model: gpt-4o             # 模型名
-  base_url: https://api.openai.com/v1  # API 地址，可指向兼容服务
-  api_key: ${OPENAI_API_KEY}           # API 密钥，支持 ${ENV} 引用
+  type: openai # Provider 类型：openai | anthropic（预留）
+  model: gpt-4o # 模型名
+  base_url: https://api.openai.com/v1 # API 地址，可指向兼容服务
+  api_key: ${OPENAI_API_KEY} # API 密钥，支持 ${ENV} 引用
 
 session:
-  max_tool_rounds: 10       # 单条消息最大工具调用轮数
-  tool_timeout_sec: 30      # 单个工具超时（秒）
-  history_max_messages: 50  # 会话保留最大消息数
+  max_tool_rounds: 10 # 单条消息最大工具调用轮数
+  tool_timeout_sec: 30 # 单个工具超时（秒）
+  history_max_messages: 50 # 会话保留最大消息数
 
 auth:
-  token_hash: ""            # 空值跳过认证，否则为 token 的 SHA-256 哈希
+  db_url: 'sqlite+aiosqlite:///tokens.db' # 数据库连接。空值跳过认证，开发用 SQLite，生产用 PostgreSQL
 
 plugins:
   - name: doudou-todo
     enabled: true
     config:
-      db_url: "postgresql://localhost/todo"
+      db_url: 'postgresql://localhost/todo'
 
-mcp:                        # MCP 服务器配置（内置插件）
+mcp: # MCP 服务器配置（内置插件）
   servers:
     - name: filesystem
       transport: stdio
       command: npx
-      args: ["-y", "@anthropic/mcp-filesystem", "/tmp"]
+      args: ['-y', '@anthropic/mcp-filesystem', '/tmp']
 ```

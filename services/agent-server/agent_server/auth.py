@@ -1,10 +1,11 @@
-# agent_server/auth.py
 from __future__ import annotations
 
-import hashlib
 import logging
 
 from fastapi import HTTPException, Request, status
+from sqlalchemy.ext.asyncio import async_sessionmaker
+
+from agent_server.token_store import TokenStore
 
 logger = logging.getLogger(__name__)
 
@@ -16,13 +17,16 @@ def _mask_token(token: str) -> str:
 
 
 class TokenAuth:
-    """Token 认证：SHA-256 哈希比对"""
-
-    def __init__(self, token_hash: str) -> None:
-        self._token_hash = token_hash
+    def __init__(
+        self,
+        store: TokenStore | None,
+        session_factory: async_sessionmaker | None,
+    ) -> None:
+        self._store = store
+        self._session_factory = session_factory
 
     async def __call__(self, request: Request) -> None:
-        if not self._token_hash:
+        if self._store is None or self._session_factory is None:
             return
 
         auth_header = request.headers.get('Authorization', '')
@@ -31,7 +35,10 @@ class TokenAuth:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='缺少认证令牌')
 
         token = auth_header.removeprefix('Bearer ')
-        computed = hashlib.sha256(token.encode()).hexdigest()
-        if computed != self._token_hash:
+
+        async with self._session_factory() as session:
+            valid = await self._store.verify_token(session, token)
+
+        if not valid:
             logger.warning('认证失败: token=%s', _mask_token(token))
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='认证令牌无效')
