@@ -1,7 +1,7 @@
 # tests/conftest.py
 from __future__ import annotations
 
-from agent_server.plugin.base import Plugin, Tool
+from plugin.base import Plugin, Tool
 
 
 class DummyPlugin(Plugin):

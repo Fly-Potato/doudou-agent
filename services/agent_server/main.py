@@ -12,13 +12,13 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from agent_server.agent.loop import AgentLoop
-from agent_server.auth import TokenAuth
-from agent_server.config import load_config
-from agent_server.event import EventBus
-from agent_server.models import Base
-from agent_server.plugin.manager import PluginManager
-from agent_server.token_store import TokenStore
+from agent.loop import AgentLoop
+from auth import TokenAuth
+from config import load_config
+from event import EventBus
+from models import Base
+from plugin.manager import PluginManager
+from token_store import TokenStore
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -157,7 +157,7 @@ def serve_cmd(_args: argparse.Namespace) -> None:
 
     config = load_config()
     uvicorn.run(
-        'agent_server.main:app',
+        app,
         host=config.server.host,
         port=config.server.port,
         reload=True,

@@ -6,7 +6,7 @@ import secrets
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from agent_server.models import Token
+from models import Token
 
 
 class TokenStore:

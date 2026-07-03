@@ -14,10 +14,10 @@
     "dev": "turbo run dev --parallel",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "format:py": "cd services/agent-server && uv run ruff format . ../../libs/doudou-agent-sdk ../../libs/doudou-demo",
-    "format:py:check": "cd services/agent-server && uv run ruff format --check . ../../libs/doudou-agent-sdk ../../libs/doudou-demo",
+    "format:py": "cd services/agent_server && uv run ruff format . ../../libs/doudou-agent-sdk ../../libs/doudou-demo",
+    "format:py:check": "cd services/agent_server && uv run ruff format --check . ../../libs/doudou-agent-sdk ../../libs/doudou-demo",
     "lint": "pnpm run format:check && pnpm run lint:py && turbo run lint",
-    "lint:py": "cd services/agent-server && uv run ruff check . ../../libs/doudou-agent-sdk ../../libs/doudou-demo",
+    "lint:py": "cd services/agent_server && uv run ruff check . ../../libs/doudou-agent-sdk ../../libs/doudou-demo",
     "setup:hooks": "git config core.hooksPath .githooks",
     "test": "pnpm run check:structure && turbo run test",
     "typecheck": "turbo run typecheck"
@@ -25,8 +25,8 @@
   "lint-staged": {
     "*.{js,cjs,mjs,ts,tsx,json,yml,yaml,md}": "prettier --write",
     "*.py": [
-      "uv run --directory services/agent-server ruff check --fix",
-      "uv run --directory services/agent-server ruff format"
+      "uv run --directory services/agent_server ruff check --fix",
+      "uv run --directory services/agent_server ruff format"
     ]
   },
   "devDependencies": {

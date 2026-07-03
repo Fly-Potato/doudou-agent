@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from agent_server.plugin.base import Tool
+from plugin.base import Tool
 
 logger = logging.getLogger(__name__)
 

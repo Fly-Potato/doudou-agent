@@ -3,8 +3,8 @@ from __future__ import annotations
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from agent_server.models import Base
-from agent_server.token_store import TokenStore
+from models import Base
+from token_store import TokenStore
 
 
 @pytest.fixture

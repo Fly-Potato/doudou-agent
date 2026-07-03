@@ -8,12 +8,12 @@ from unittest.mock import patch
 
 import pytest
 
-from agent_server.agent.loop import AgentLoop
-from agent_server.config import AppConfig
-from agent_server.event import EventBus
-from agent_server.plugin.base import Tool
-from agent_server.plugin.registry import ToolRegistry
-from agent_server.types import SessionId
+from agent.loop import AgentLoop
+from config import AppConfig
+from event import EventBus
+from plugin.base import Tool
+from plugin.registry import ToolRegistry
+from schemas import SessionId
 
 
 class MockProvider:
@@ -54,7 +54,7 @@ class TestAgentLoop:
         registry = ToolRegistry()
         event_bus = EventBus([])
 
-        with patch('agent_server.agent.loop.create_provider', return_value=provider):
+        with patch('agent.loop.create_provider', return_value=provider):
             loop = AgentLoop(config, registry, event_bus)
 
         events: list[str] = []
@@ -111,7 +111,7 @@ class TestAgentLoop:
         config = make_config()
         event_bus = EventBus([])
 
-        with patch('agent_server.agent.loop.create_provider', return_value=provider):
+        with patch('agent.loop.create_provider', return_value=provider):
             loop = AgentLoop(config, registry, event_bus)
 
         events: list[str] = []
@@ -167,7 +167,7 @@ class TestAgentLoop:
         config = make_config(max_tool_rounds=3)
         event_bus = EventBus([])
 
-        with patch('agent_server.agent.loop.create_provider', return_value=provider):
+        with patch('agent.loop.create_provider', return_value=provider):
             loop = AgentLoop(config, registry, event_bus)
 
         events: list[str] = []

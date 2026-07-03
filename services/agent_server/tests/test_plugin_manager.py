@@ -5,10 +5,11 @@ from pathlib import Path
 
 import pytest
 
-from agent_server.plugin.base import Tool
-from agent_server.plugin.manager import PluginManager
-from agent_server.plugin.registry import ToolRegistry
-from tests.conftest import DummyPlugin
+from plugin.base import Tool
+from plugin.manager import PluginManager
+from plugin.registry import ToolRegistry
+
+from .conftest import DummyPlugin
 
 
 class SimplePlugin(DummyPlugin):

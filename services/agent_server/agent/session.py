@@ -1,7 +1,7 @@
 # agent_server/agent/session.py
 from __future__ import annotations
 
-from agent_server.types import Message, SessionId
+from schemas import Message, SessionId
 
 
 class SessionManager:

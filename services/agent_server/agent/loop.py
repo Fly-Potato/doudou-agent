@@ -7,12 +7,12 @@ import logging
 from collections.abc import AsyncIterator
 from typing import Any
 
-from agent_server.agent.llm import LLMProvider, create_provider
-from agent_server.agent.session import SessionManager
-from agent_server.config import AppConfig
-from agent_server.event import EventBus
-from agent_server.plugin.registry import ToolRegistry
-from agent_server.types import Message, SessionId
+from agent.llm import LLMProvider, create_provider
+from agent.session import SessionManager
+from config import AppConfig
+from event import EventBus
+from plugin.registry import ToolRegistry
+from schemas import Message, SessionId
 
 logger = logging.getLogger(__name__)
 

@@ -45,7 +45,7 @@ agent-server 是 doudou-agent 的 AI 后端服务，采用**插件式架构**。
 
 ### 2.2 AgentLoop — AI 对话循环
 
-`services/agent-server/agent_server/agent/loop.py`
+`services/agent_server/agent/loop.py`
 
 AgentLoop 是系统的核心运行时，每次 `POST /chat` 请求启动一次循环：
 
@@ -80,7 +80,7 @@ SSE 流 (token → tool_call → tool_result → done)
 
 ### 2.3 PluginManager — 插件管理器
 
-`services/agent-server/agent_server/plugin/manager.py`
+`services/agent_server/plugin/manager.py`
 
 通过 Python `importlib.metadata.entry_points` 发现所有注册到 `doudou_agent.plugins` 组的插件类，根据 `agent-server.yaml` 配置过滤并加载。
 
@@ -108,7 +108,7 @@ SSE 流 (token → tool_call → tool_result → done)
 
 ### 2.4 ToolRegistry — 工具注册表
 
-`services/agent-server/agent_server/plugin/registry.py`
+`services/agent_server/plugin/registry.py`
 
 - 合并所有插件的工具，按名索引
 - 同名工具后加载覆盖先加载（打印警告）
@@ -130,13 +130,13 @@ SSE 流 (token → tool_call → tool_result → done)
 
 ### 2.5 EventBus — 事件总线
 
-`services/agent-server/agent_server/event.py`
+`services/agent_server/event.py`
 
 按插件加载顺序串行调用生命周期钩子。前一个插件的返回值作为下一个的输入。
 
 ### 2.6 SessionManager — 会话管理
 
-`services/agent-server/agent_server/agent/session.py`
+`services/agent_server/agent/session.py`
 
 - 按 `session_id` 隔离对话历史
 - 支持消息数量裁剪（`history_max_messages`）
@@ -144,7 +144,7 @@ SSE 流 (token → tool_call → tool_result → done)
 
 ### 2.7 LLMProvider — LLM 适配器
 
-`services/agent-server/agent_server/agent/llm/`
+`services/agent_server/agent/llm/`
 
 **接口：**
 
@@ -270,7 +270,7 @@ SQLAlchemy 的 `db_url` 前缀决定数据库类型：
 ## 5. 目录结构
 
 ```
-services/agent-server/
+services/agent_server/
 ├── pyproject.toml                    # 项目配置、依赖、entry_point 声明
 ├── agent-server.yaml                 # 服务配置文件
 ├── README.md
@@ -284,30 +284,26 @@ services/agent-server/
 │   ├── test_agent_loop.py            # AgentLoop 测试
 │   ├── test_auth.py                  # TokenAuth 测试
 │   └── test_token_store.py           # TokenStore CRUD 测试
-└── agent_server/
-    ├── __init__.py                   # 包标记
-    ├── main.py                       # FastAPI 应用，SSE 端点 + CLI 子命令
-    ├── config.py                     # YAML 配置加载 + ${ENV} 替换
-    ├── auth.py                       # TokenAuth — 数据库令牌认证
-    ├── models.py                     # Token ORM 模型（SQLAlchemy）
-    ├── token_store.py                # TokenStore — 令牌 CRUD
-    ├── types.py                      # 共享类型
-    ├── event.py                      # EventBus 钩子总线
-    │
-    ├── plugin/
-    │   ├── __init__.py
-    │   ├── base.py                   # Plugin ABC, Tool, Skill 基类
-    │   ├── manager.py                # PluginManager 发现/加载
-    │   └── registry.py               # ToolRegistry 工具注册表
-    │
-    └── agent/
-        ├── __init__.py
-        ├── loop.py                   # AgentLoop 对话循环
-        ├── session.py                # SessionManager 会话历史
-        └── llm/
-            ├── __init__.py           # create_provider 工厂
-            ├── base.py               # LLMProvider ABC
-            └── openai.py             # OpenAI 兼容适配器
+├── main.py                           # FastAPI 应用，SSE 端点 + CLI 子命令
+├── config.py                         # YAML 配置加载 + ${ENV} 替换
+├── auth.py                           # TokenAuth — 数据库令牌认证
+├── models.py                         # Token ORM 模型（SQLAlchemy）
+├── token_store.py                    # TokenStore — 令牌 CRUD
+├── schemas.py                        # 共享类型
+├── event.py                          # EventBus 钩子总线
+├── plugin/
+│   ├── __init__.py
+│   ├── base.py                       # Plugin ABC, Tool, Skill 基类
+│   ├── manager.py                    # PluginManager 发现/加载
+│   └── registry.py                   # ToolRegistry 工具注册表
+└── agent/
+    ├── __init__.py
+    ├── loop.py                       # AgentLoop 对话循环
+    ├── session.py                    # SessionManager 会话历史
+    └── llm/
+        ├── __init__.py               # create_provider 工厂
+        ├── base.py                   # LLMProvider ABC
+        └── openai.py                 # OpenAI 兼容适配器
 ```
 
 ## 6. 配置参考

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from agent_server.plugin.base import Plugin
-from agent_server.types import SessionId
+from plugin.base import Plugin
+from schemas import SessionId
 
 
 class EventBus:

@@ -7,9 +7,9 @@ import pytest_asyncio
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from agent_server.auth import TokenAuth
-from agent_server.models import Base
-from agent_server.token_store import TokenStore
+from auth import TokenAuth
+from models import Base
+from token_store import TokenStore
 
 
 @pytest_asyncio.fixture

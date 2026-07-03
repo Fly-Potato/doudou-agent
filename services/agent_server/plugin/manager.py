@@ -6,12 +6,12 @@ import logging
 import sys
 from pathlib import Path
 
-from agent_server.plugin.base import Plugin
-from agent_server.plugin.registry import ToolRegistry
+from plugin.base import Plugin
+from plugin.registry import ToolRegistry
 
 logger = logging.getLogger(__name__)
 
-# 内置插件目录：agent_server/builtins/
+# 内置插件目录
 _DEFAULT_BUILTINS_DIR = str(Path(__file__).resolve().parent.parent / 'builtins')
 
 
@@ -70,7 +70,7 @@ class PluginManager:
         """加载所有插件：内置（builtins/）→ 外部（目录扫描）"""
         loaded: list[Plugin] = []
 
-        # 1. 内置插件：扫描 agent_server/builtins/
+        # 1. 内置插件：扫描 builtins/
         builtins_root = Path(self._builtins_dir).resolve()
         if builtins_root.is_dir():
             for subdir in sorted(builtins_root.iterdir()):

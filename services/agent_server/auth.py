@@ -5,7 +5,7 @@ import logging
 from fastapi import HTTPException, Request, status
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from agent_server.token_store import TokenStore
+from token_store import TokenStore
 
 logger = logging.getLogger(__name__)
 

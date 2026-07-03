@@ -1,6 +1,6 @@
-from agent_server.agent.llm.base import LLMProvider
-from agent_server.agent.llm.openai import OpenAIProvider
-from agent_server.config import LLMConfig
+from agent.llm.base import LLMProvider
+from agent.llm.openai import OpenAIProvider
+from config import LLMConfig
 
 
 def create_provider(config: LLMConfig) -> LLMProvider:

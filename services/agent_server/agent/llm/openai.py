@@ -5,7 +5,7 @@ from typing import Any
 
 import openai
 
-from agent_server.agent.llm.base import LLMProvider
+from agent.llm.base import LLMProvider
 
 
 class OpenAIProvider(LLMProvider):

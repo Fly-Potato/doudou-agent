@@ -21,10 +21,6 @@ dependencies = [
 [tool.uv.sources]
 doudou-agent-sdk = { path = "../../libs/doudou-agent-sdk" }
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["agent_server*"]
-
 [dependency-groups]
 dev = [
     "pytest>=8.0",
