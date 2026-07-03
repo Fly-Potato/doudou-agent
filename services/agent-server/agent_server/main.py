@@ -55,10 +55,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         _token_store = TokenStore()
 
     plugin_manager = PluginManager()
-    plugin_configs = [
-        {'name': p.name, 'enabled': p.enabled, 'config': p.config} for p in config.plugins
-    ]
-    await plugin_manager.load_enabled(plugin_configs)
+    await plugin_manager.load_all(external_dirs=config.plugin.external_dirs)
 
     _token_auth = TokenAuth(_token_store, _session_factory)
     _agent_loop = AgentLoop(

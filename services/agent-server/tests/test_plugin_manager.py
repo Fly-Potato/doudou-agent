@@ -1,7 +1,7 @@
 # tests/test_plugin_manager.py
 from __future__ import annotations
 
-from unittest.mock import patch
+from pathlib import Path
 
 import pytest
 
@@ -78,28 +78,81 @@ class TestToolRegistry:
         assert 'b' not in registry
 
 
+_PLUGIN_CODE = """
+from doudou_agent_sdk import Plugin, Tool
+
+class TestPlugin(Plugin):
+    name = "test-plugin"
+
+    def register_tools(self) -> list[Tool]:
+        async def hello(session_id: str, **kw):
+            return {"msg": "hello"}
+        return [
+            Tool(
+                name="hello",
+                description="say hello",
+                parameters={"type": "object", "properties": {}},
+                handler=hello,
+            )
+        ]
+"""
+
+
 class TestPluginManager:
     @pytest.mark.asyncio
-    async def test_load_enabled_plugin(self) -> None:
-        with patch.object(PluginManager, 'discover', return_value=[DummyPlugin]):
-            mgr = PluginManager()
-            loaded = await mgr.load_enabled([{'name': 'dummy', 'enabled': True, 'config': {}}])
-            assert len(loaded) == 1
-            assert loaded[0].name == 'dummy'
-            assert loaded[0]._load_called
-            assert len(mgr.tool_registry) == 1
+    async def test_load_builtin_plugins(self, tmp_path: Path) -> None:
+        """内置插件从 builtins/ 目录被正确扫描加载"""
+        plugin_dir = tmp_path / 'my-builtin'
+        plugin_dir.mkdir()
+        (plugin_dir / '__init__.py').write_text(_PLUGIN_CODE)
+
+        mgr = PluginManager(builtins_dir=str(tmp_path))
+        loaded = await mgr.load_all()
+        assert len(loaded) == 1
+        assert loaded[0].name == 'test-plugin'
+        assert 'hello' in mgr.tool_registry
 
     @pytest.mark.asyncio
-    async def test_skip_disabled_plugin(self) -> None:
-        with patch.object(PluginManager, 'discover', return_value=[DummyPlugin]):
-            mgr = PluginManager()
-            loaded = await mgr.load_enabled([{'name': 'dummy', 'enabled': False}])
-            assert len(loaded) == 0
-            assert len(mgr.tool_registry) == 0
+    async def test_builtins_dir_not_exists(self) -> None:
+        """builtins/ 目录不存在时不报错"""
+        mgr = PluginManager(builtins_dir='C:\\nonexistent_path_for_test')
+        loaded = await mgr.load_all()
+        assert len(loaded) == 0
 
     @pytest.mark.asyncio
-    async def test_plugin_not_in_config_is_skipped(self) -> None:
-        with patch.object(PluginManager, 'discover', return_value=[SimplePlugin]):
-            mgr = PluginManager()
-            loaded = await mgr.load_enabled([{'name': 'other_plugin', 'enabled': True}])
-            assert len(loaded) == 0
+    async def test_external_plugin_loads_from_dir(self, tmp_path: Path) -> None:
+        """外部插件能从包含 __init__.py 的目录成功加载"""
+        plugin_dir = tmp_path / 'my-external-test'
+        plugin_dir.mkdir()
+        (plugin_dir / '__init__.py').write_text(_PLUGIN_CODE)
+
+        mgr = PluginManager(builtins_dir=str(tmp_path / 'empty-builtins'))
+        loaded = await mgr.load_all(external_dirs=[str(tmp_path)])
+        assert len(loaded) == 1
+        assert loaded[0].name == 'test-plugin'
+        assert 'hello' in mgr.tool_registry
+
+    @pytest.mark.asyncio
+    async def test_skip_dot_prefixed_directory(self, tmp_path: Path) -> None:
+        """以 . 开头的目录被跳过"""
+        (tmp_path / '.disabled').mkdir()
+        mgr = PluginManager(builtins_dir=str(tmp_path))
+        loaded = await mgr.load_all()
+        assert len(loaded) == 0
+
+    @pytest.mark.asyncio
+    async def test_skip_directory_without_init_py(self, tmp_path: Path) -> None:
+        """缺少 __init__.py 的目录被跳过"""
+        no_init = tmp_path / 'no-init'
+        no_init.mkdir()
+        mgr = PluginManager(builtins_dir=str(tmp_path))
+        loaded = await mgr.load_all()
+        assert len(loaded) == 0
+
+    @pytest.mark.asyncio
+    async def test_skip_non_directory_entry(self, tmp_path: Path) -> None:
+        """目录中的普通文件被跳过"""
+        (tmp_path / 'some_file.txt').write_text('not a dir')
+        mgr = PluginManager(builtins_dir=str(tmp_path))
+        loaded = await mgr.load_all()
+        assert len(loaded) == 0

@@ -1,23 +1,27 @@
 from __future__ import annotations
 
+import importlib.util
+import inspect
 import logging
-from importlib.metadata import EntryPoint, entry_points
-from typing import Any
+import sys
+from pathlib import Path
 
 from agent_server.plugin.base import Plugin
 from agent_server.plugin.registry import ToolRegistry
 
 logger = logging.getLogger(__name__)
 
-ENTRY_POINT_GROUP = 'doudou_agent.plugins'
+# 内置插件目录：agent_server/builtins/
+_DEFAULT_BUILTINS_DIR = str(Path(__file__).resolve().parent.parent / 'builtins')
 
 
 class PluginManager:
-    """通过 entry_points 发现、加载、管理插件生命周期"""
+    """插件管理器：扫描目录加载内置和外部插件"""
 
-    def __init__(self) -> None:
+    def __init__(self, builtins_dir: str | None = None) -> None:
         self._plugins: list[Plugin] = []
         self._registry = ToolRegistry()
+        self._builtins_dir = builtins_dir or _DEFAULT_BUILTINS_DIR
 
     @property
     def plugins(self) -> list[Plugin]:
@@ -27,52 +31,109 @@ class PluginManager:
     def tool_registry(self) -> ToolRegistry:
         return self._registry
 
-    def discover(self) -> list[type[Plugin]]:
-        """发现所有通过 entry_point 注册的插件类"""
-        discovered: list[type[Plugin]] = []
-        eps: list[EntryPoint] = []
+    # ── 目录发现 ─────────────────────────────────────
 
-        try:
-            eps = list(entry_points(group=ENTRY_POINT_GROUP))
-        except TypeError:
-            all_eps = entry_points()
-            eps = list(all_eps.get(ENTRY_POINT_GROUP, []))
+    def discover_from_dir(self, plugin_dir: Path) -> type[Plugin] | None:
+        """从插件目录动态加载，返回第一个 Plugin 子类"""
+        if not plugin_dir.is_dir():
+            return None
+        init_file = plugin_dir / '__init__.py'
+        if not init_file.is_file():
+            return None
 
-        for ep in eps:
-            plugin_cls = ep.load()
-            if issubclass(plugin_cls, Plugin):
-                discovered.append(plugin_cls)
-                logger.info('发现插件: %s (%s)', ep.name, plugin_cls.__name__)
+        safe_suffix = ''.join(c if c.isalnum() or c == '_' else '_' for c in plugin_dir.name)
+        module_name = f'_ext_plugin_{safe_suffix}'
 
-        return discovered
+        if module_name not in sys.modules:
+            spec = importlib.util.spec_from_file_location(
+                module_name,
+                str(init_file),
+                submodule_search_locations=[str(plugin_dir)],
+            )
+            if spec is None or spec.loader is None:
+                return None
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = module
+            spec.loader.exec_module(module)
 
-    async def load_enabled(self, plugin_configs: list[dict[str, Any]]) -> list[Plugin]:
-        """加载配置中 enabled 的插件"""
-        enabled_names = {pc['name'] for pc in plugin_configs if pc.get('enabled', True)}
-        configs_by_name = {pc['name']: pc.get('config', {}) for pc in plugin_configs}
+        module = sys.modules[module_name]
+        for _, obj in inspect.getmembers(module, inspect.isclass):
+            if obj is not Plugin and issubclass(obj, Plugin):
+                return obj
 
-        discovered = self.discover()
+        logger.warning('目录 %s 中未找到 Plugin 子类', plugin_dir)
+        return None
 
+    # ── 加载入口 ────────────────────────────────────────
+
+    async def load_all(self, external_dirs: list[str] | None = None) -> list[Plugin]:
+        """加载所有插件：内置（builtins/）→ 外部（目录扫描）"""
         loaded: list[Plugin] = []
-        for cls in discovered:
-            plugin_instance = cls()
-            name = plugin_instance.name
-            if name not in enabled_names:
-                logger.info("插件 '%s' 不在启用列表中，跳过", name)
-                continue
 
-            config = configs_by_name.get(name, {})
-            await plugin_instance.on_load(config)
+        # 1. 内置插件：扫描 agent_server/builtins/
+        builtins_root = Path(self._builtins_dir).resolve()
+        if builtins_root.is_dir():
+            for subdir in sorted(builtins_root.iterdir()):
+                plugin = await self._load_plugin_from_dir(subdir)
+                if plugin is not None:
+                    loaded.append(plugin)
 
-            tools = plugin_instance.register_tools()
-            for tool in tools:
-                self._registry.register(tool)
-
-            self._plugins.append(plugin_instance)
-            loaded.append(plugin_instance)
-            logger.info("插件 '%s' 加载成功，注册 %d 个工具", name, len(tools))
+        # 2. 外部插件：扫描 external_dirs
+        if external_dirs:
+            for dir_path in external_dirs:
+                root = Path(dir_path).resolve()
+                if not root.is_dir():
+                    logger.warning('外部插件目录 %s 不存在，跳过', root)
+                    continue
+                for subdir in sorted(root.iterdir()):
+                    plugin = await self._load_plugin_from_dir(subdir)
+                    if plugin is not None:
+                        loaded.append(plugin)
 
         return loaded
+
+    async def _load_plugin_from_dir(self, plugin_dir: Path) -> Plugin | None:
+        """从单个目录尝试加载插件，成功返回 Plugin 实例"""
+        name = plugin_dir.name
+
+        if name.startswith('.'):
+            return None
+        if not plugin_dir.is_dir():
+            return None
+        if not (plugin_dir / '__init__.py').is_file():
+            logger.debug('目录 %s 不是 Python 包（缺少 __init__.py），跳过', plugin_dir)
+            return None
+
+        cls = self.discover_from_dir(plugin_dir)
+        if cls is None:
+            return None
+
+        try:
+            inst = cls()
+            config = None
+            cfg_cls = getattr(cls, 'Config', None)
+            if cfg_cls is not None and inspect.isclass(cfg_cls):
+                try:
+                    from doudou_agent_sdk import PluginConfig
+
+                    if issubclass(cfg_cls, PluginConfig):
+                        config = cfg_cls()
+                except ImportError:
+                    pass
+
+            await inst.on_load(config)
+
+            tools = inst.register_tools()
+            for tool in tools:
+                self._registry.register(tool)
+            self._plugins.append(inst)
+            logger.info("插件 '%s' 加载成功，注册 %d 个工具", inst.name, len(tools))
+            return inst
+        except Exception:
+            logger.exception('插件 %s 加载失败', name)
+            return None
+
+    # ── 生命周期 ────────────────────────────────────────
 
     async def shutdown(self) -> None:
         for plugin in self._plugins:

@@ -35,10 +35,8 @@ class AuthConfig:
 
 
 @dataclass
-class PluginConfig:
-    name: str
-    enabled: bool = True
-    config: dict = field(default_factory=dict)
+class PluginSettings:
+    external_dirs: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -47,7 +45,7 @@ class AppConfig:
     llm: LLMConfig = field(default_factory=LLMConfig)
     session: SessionConfig = field(default_factory=SessionConfig)
     auth: AuthConfig = field(default_factory=AuthConfig)
-    plugins: list[PluginConfig] = field(default_factory=list)
+    plugin: PluginSettings = field(default_factory=PluginSettings)
 
 
 def _substitute_env_vars(text: str) -> str:
@@ -99,15 +97,10 @@ def load_config(path: str = 'agent-server.yaml') -> AppConfig:
         a = data['auth']
         app.auth = AuthConfig(db_url=a.get('db_url', ''))
 
-    if 'plugins' in data:
-        app.plugins = [
-            PluginConfig(
-                name=p['name'],
-                enabled=p.get('enabled', True),
-                config=p.get('config', {}),
-            )
-            for p in data['plugins']
-            if isinstance(p, dict) and 'name' in p
-        ]
+    if 'plugin' in data:
+        p = data['plugin']
+        app.plugin = PluginSettings(
+            external_dirs=p.get('external_dirs', []),
+        )
 
     return _apply_env_defaults(app)

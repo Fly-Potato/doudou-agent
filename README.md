@@ -25,7 +25,7 @@ is the Python lockfile.
 | `apps/`     | Product applications, such as `<product>-mobile` (React Native) and `<product>-desktop` (Tauri). |
 | `packages/` | Platform-neutral TypeScript packages.                                                            |
 | `services/` | Deployable Python services。当前：`agent-server` AI 后端服务。                                   |
-| `libs/`     | Reusable Python libraries.                                                                       |
+| `libs/`     | Python libraries, including `doudou-agent-sdk`（插件开发 SDK）和其他可复用库。                   |
 | `tooling/`  | Repository checks and maintenance tooling.                                                       |
 
 React Native and Tauri applications do not share UI packages. A shared TypeScript package must not
@@ -79,11 +79,9 @@ Python 3.12+, FastAPI, openai SDK, PyYAML, MCP SDK, SQLAlchemy 2.0, aiosqlite (�
 ## First-time setup
 
 ```sh
-git init
 pnpm install
-uv lock
-uv sync
 pnpm run setup:hooks
+cd services/agent-server && uv sync
 ```
 
 The `setup:hooks` command activates `.githooks/pre-commit`, which runs `lint-staged` on staged
@@ -117,18 +115,14 @@ within that app.
 
 ### Python service or library
 
-Create a `pyproject.toml` inside `services/<name>` or `libs/<name>`. Then add the following table to
-the root `pyproject.toml` and regenerate the lockfile:
+Create a `pyproject.toml` inside `services/<name>` or `libs/<name>` as a standalone Python project.
+If it depends on `doudou-agent-sdk`, add a source reference:
 
 ```toml
-[tool.uv.workspace]
-members = ["services/*", "libs/*"]
+[tool.uv.sources]
+doudou-agent-sdk = { path = "../../libs/doudou-agent-sdk" }
 ```
 
 ```sh
-uv lock
 uv sync
 ```
-
-Do not add the workspace table before at least one matching member contains a `pyproject.toml`; uv
-requires every matched workspace member directory to be a Python project.

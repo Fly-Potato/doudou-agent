@@ -83,7 +83,7 @@ plugins:
   - name: doudou-todo
     enabled: true
     config:
-      db_url: "sqlite:///todos.db"
+      db_url: 'sqlite:///todos.db'
 ```
 
 ## 3. Plugin 接口
@@ -167,12 +167,12 @@ class Tool:
 
 ### 参数说明
 
-| 字段 | 说明 |
-|------|------|
-| `name` | 插件内唯一，建议带前缀避免冲突，如 `todo_add` |
-| `description` | 清晰描述工具用途，影响 LLM 调用准确性 |
-| `parameters` | JSON Schema，与 OpenAI function-calling 格式兼容 |
-| `handler` | 签名 `async (session_id: str, **params) -> Any`，中枢注入 `session_id` |
+| 字段          | 说明                                                                   |
+| ------------- | ---------------------------------------------------------------------- |
+| `name`        | 插件内唯一，建议带前缀避免冲突，如 `todo_add`                          |
+| `description` | 清晰描述工具用途，影响 LLM 调用准确性                                  |
+| `parameters`  | JSON Schema，与 OpenAI function-calling 格式兼容                       |
+| `handler`     | 签名 `async (session_id: str, **params) -> Any`，中枢注入 `session_id` |
 
 ### handler 规范
 
@@ -251,9 +251,9 @@ class TodoPlugin(Plugin):
 ```yaml
 plugins:
   - name: doudou-todo
-    enabled: true                     # 设为 false 可禁用已安装插件
-    config:                           # 传递给 on_load(config)
-      db_url: "sqlite:///todos.db"
+    enabled: true # 设为 false 可禁用已安装插件
+    config: # 传递给 on_load(config)
+      db_url: 'sqlite:///todos.db'
       max_items: 100
 
   - name: doudou-search

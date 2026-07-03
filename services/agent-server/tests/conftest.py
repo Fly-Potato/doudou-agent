@@ -32,7 +32,7 @@ class DummyPlugin(Plugin):
             )
         ]
 
-    async def on_load(self, config: dict) -> None:
+    async def on_load(self, config: dict | None = None) -> None:
         self._load_called = True
 
     async def pre_llm_call(self, session_id, messages):

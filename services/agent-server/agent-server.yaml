@@ -16,4 +16,6 @@ session:
 auth:
   db_url: 'sqlite+aiosqlite:///tokens.db'
 
-plugins: []
+plugin:
+  external_dirs:
+    - '/plugins'
