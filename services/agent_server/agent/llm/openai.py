@@ -8,30 +8,36 @@ import openai
 from agent.llm.base import LLMProvider
 
 
-class OpenAIProvider(LLMProvider):
-    """OpenAI 兼容 Provider，通过 base_url 适配 DeepSeek/Ollama/OpenRouter 等
+class OpenAICompatibleProvider(LLMProvider):
+    """OpenAI 兼容格式的 Provider 基类
 
-    客户端在首次调用 chat_completion 时创建，允许服务器启动时不配置 API key。
-    api_key 由 openai SDK 自动从 OPENAI_API_KEY 环境变量读取。
+    id 和 base_url 由子类硬编码。
+    chat_completion 接收 model 和 api_key 作为参数。
     """
 
-    def __init__(self, model: str, base_url: str, **kwargs: Any) -> None:
-        self._model = model
-        self._base_url = base_url
+    def __init__(self, **kwargs: Any) -> None:
         self._extra_kwargs = kwargs
         self._client: openai.AsyncOpenAI | None = None
 
-    def _get_client(self) -> openai.AsyncOpenAI:
-        if self._client is None:
-            self._client = openai.AsyncOpenAI(base_url=self._base_url)
+    def _get_client(self, api_key: str) -> openai.AsyncOpenAI:
+        if self._client is None or self._client.api_key != api_key:
+            self._client = openai.AsyncOpenAI(
+                base_url=self.base_url,
+                api_key=api_key or None,
+            )
         return self._client
 
     async def chat_completion(
-        self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
+        *,
+        model: str,
+        api_key: str,
     ) -> AsyncIterator[dict[str, Any]]:
-        client = self._get_client()
+        client = self._get_client(api_key)
         stream = await client.chat.completions.create(
-            model=self._model,
+            model=model,
             messages=messages,
             tools=tools if tools else openai.NOT_GIVEN,
             stream=True,

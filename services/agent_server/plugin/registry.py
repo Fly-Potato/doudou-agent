@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from agent.llm.base import LLMProvider
 from plugin.base import Tool
 
 logger = logging.getLogger(__name__)
@@ -41,3 +42,24 @@ class ToolRegistry:
 
     def __contains__(self, name: str) -> bool:
         return name in self._tools
+
+
+class ProviderRegistry:
+    """合并所有插件的 LLM Provider，提供按 id 查询"""
+
+    def __init__(self) -> None:
+        self._providers: dict[str, LLMProvider] = {}
+
+    def register(self, provider: LLMProvider) -> None:
+        if provider.id in self._providers:
+            logger.warning("Provider '%s' 被覆盖", provider.id)
+        self._providers[provider.id] = provider
+
+    def get(self, name: str) -> LLMProvider | None:
+        return self._providers.get(name)
+
+    def list(self) -> list[LLMProvider]:
+        return list(self._providers.values())
+
+    def __contains__(self, name: str) -> bool:
+        return name in self._providers

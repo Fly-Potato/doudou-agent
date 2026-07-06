@@ -4,7 +4,6 @@ from __future__ import annotations
 import json
 from collections.abc import AsyncIterator
 from typing import Any
-from unittest.mock import patch
 
 import pytest
 
@@ -19,12 +18,20 @@ from schemas import SessionId
 class MockProvider:
     """可编程的假 LLM Provider"""
 
+    id = 'mock'
+    base_url = 'https://mock.test'
+
     def __init__(self, *chunk_lists: list[dict[str, Any]]) -> None:
         self._chunk_lists = list(chunk_lists)
         self._call_idx = 0
 
     async def chat_completion(
-        self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
+        *,
+        model: str = '',
+        api_key: str = '',
     ) -> AsyncIterator[dict[str, Any]]:
         chunks = self._chunk_lists[self._call_idx]
         self._call_idx += 1
@@ -53,12 +60,12 @@ class TestAgentLoop:
         config = make_config()
         registry = ToolRegistry()
         event_bus = EventBus([])
-
-        with patch('agent.loop.create_provider', return_value=provider):
-            loop = AgentLoop(config, registry, event_bus)
+        loop = AgentLoop(config, registry, event_bus)
 
         events: list[str] = []
-        async for event_str in loop.run('sess-1', '你好'):
+        async for event_str in loop.run(
+            'sess-1', '你好', provider=provider, model='mock', api_key=''
+        ):
             events.append(event_str)
 
         token_events = [e for e in events if e.startswith('event: token')]
@@ -110,12 +117,12 @@ class TestAgentLoop:
 
         config = make_config()
         event_bus = EventBus([])
-
-        with patch('agent.loop.create_provider', return_value=provider):
-            loop = AgentLoop(config, registry, event_bus)
+        loop = AgentLoop(config, registry, event_bus)
 
         events: list[str] = []
-        async for event_str in loop.run('sess-2', '帮我回显 hello'):
+        async for event_str in loop.run(
+            'sess-2', '帮我回显 hello', provider=provider, model='mock', api_key=''
+        ):
             events.append(event_str)
 
         tool_call_events = [e for e in events if 'event: tool_call' in e]
@@ -166,12 +173,12 @@ class TestAgentLoop:
 
         config = make_config(max_tool_rounds=3)
         event_bus = EventBus([])
-
-        with patch('agent.loop.create_provider', return_value=provider):
-            loop = AgentLoop(config, registry, event_bus)
+        loop = AgentLoop(config, registry, event_bus)
 
         events: list[str] = []
-        async for event_str in loop.run('sess-3', 'test'):
+        async for event_str in loop.run(
+            'sess-3', 'test', provider=provider, model='mock', api_key=''
+        ):
             events.append(event_str)
 
         error_events = [e for e in events if 'MAX_ROUNDS' in e]

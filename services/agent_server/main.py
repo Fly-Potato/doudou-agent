@@ -8,7 +8,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
@@ -18,6 +18,7 @@ from config import load_config
 from event import EventBus
 from models import Base
 from plugin.manager import PluginManager
+from provider_store import ProviderStore
 from token_store import TokenStore
 
 logging.basicConfig(level=logging.INFO)
@@ -27,10 +28,14 @@ logger = logging.getLogger(__name__)
 class ChatRequest(BaseModel):
     session_id: str
     content: str
+    provider: str = 'deepseek'
+    model: str = 'deepseek-chat'
 
 
 _agent_loop: AgentLoop | None = None
 _token_auth: TokenAuth | None = None
+_plugin_manager: PluginManager | None = None
+_session_factory: async_sessionmaker | None = None
 
 
 async def verify_token(request: Request) -> None:
@@ -40,7 +45,7 @@ async def verify_token(request: Request) -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    global _agent_loop, _token_auth
+    global _agent_loop, _token_auth, _plugin_manager, _session_factory
 
     config = load_config()
 
@@ -54,18 +59,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         _session_factory = async_sessionmaker(_engine, expire_on_commit=False)
         _token_store = TokenStore()
 
-    plugin_manager = PluginManager()
-    await plugin_manager.load_all(external_dirs=config.plugin.external_dirs)
+    _plugin_manager = PluginManager()
+    await _plugin_manager.load_all(external_dirs=config.plugin.external_dirs)
 
     _token_auth = TokenAuth(_token_store, _session_factory)
     _agent_loop = AgentLoop(
         config,
-        plugin_manager.tool_registry,
-        EventBus(plugin_manager.plugins),
+        _plugin_manager.tool_registry,
+        EventBus(_plugin_manager.plugins),
     )
-    logger.info('agent-server 启动完成，已加载 %d 个插件', len(plugin_manager.plugins))
+    logger.info('agent-server 启动完成，已加载 %d 个插件', len(_plugin_manager.plugins))
     yield
-    await plugin_manager.shutdown()
+    await _plugin_manager.shutdown()
     if _engine is not None:
         await _engine.dispose()
 
@@ -78,16 +83,41 @@ async def health() -> dict[str, str]:
     return {'status': 'ok'}
 
 
-@app.post('/chat')
+@app.post('/chat', response_model=None)
 async def chat(
     body: ChatRequest,
     _: None = Depends(verify_token),
-) -> StreamingResponse:
-    if _agent_loop is None:
+) -> StreamingResponse | JSONResponse:
+    if _agent_loop is None or _plugin_manager is None:
         raise RuntimeError('AgentLoop 尚未初始化')
 
+    # 查找 provider
+    provider_template = _plugin_manager.provider_registry.get(body.provider)
+    if provider_template is None:
+        return JSONResponse(
+            status_code=400,
+            content={'error': f'未找到 Provider: {body.provider}'},
+        )
+
+    api_key = ''
+    model = body.model
+
+    # 从 DB 查找 profile
+    if _session_factory is not None:
+        async with _session_factory() as session:
+            store = ProviderStore()
+            profile = await store.get_by_name(session, body.provider)
+            if profile is not None:
+                api_key = profile.api_key
+
     async def event_stream() -> AsyncIterator[str]:
-        async for sse_event in _agent_loop.run(body.session_id, body.content):
+        async for sse_event in _agent_loop.run(
+            body.session_id,
+            body.content,
+            provider=provider_template,
+            model=model,
+            api_key=api_key,
+        ):
             yield sse_event
 
     return StreamingResponse(

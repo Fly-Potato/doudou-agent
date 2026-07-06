@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from plugin.base import Plugin
-from plugin.registry import ToolRegistry
+from plugin.registry import ProviderRegistry, ToolRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +21,7 @@ class PluginManager:
     def __init__(self, builtins_dir: str | None = None) -> None:
         self._plugins: list[Plugin] = []
         self._registry = ToolRegistry()
+        self._provider_registry = ProviderRegistry()
         self._builtins_dir = builtins_dir or _DEFAULT_BUILTINS_DIR
 
     @property
@@ -30,6 +31,10 @@ class PluginManager:
     @property
     def tool_registry(self) -> ToolRegistry:
         return self._registry
+
+    @property
+    def provider_registry(self) -> ProviderRegistry:
+        return self._provider_registry
 
     # ── 目录发现 ─────────────────────────────────────
 
@@ -126,8 +131,21 @@ class PluginManager:
             tools = inst.register_tools()
             for tool in tools:
                 self._registry.register(tool)
+
+            provider_count = 0
+            if hasattr(inst, 'register_providers'):
+                providers = inst.register_providers()
+                for provider in providers:
+                    self._provider_registry.register(provider)
+                provider_count = len(providers)
+
             self._plugins.append(inst)
-            logger.info("插件 '%s' 加载成功，注册 %d 个工具", inst.name, len(tools))
+            logger.info(
+                "插件 '%s' 加载成功，注册 %d 个工具、%d 个 Provider",
+                inst.name,
+                len(tools),
+                provider_count,
+            )
             return inst
         except Exception:
             logger.exception('插件 %s 加载失败', name)

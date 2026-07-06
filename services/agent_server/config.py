@@ -16,9 +16,7 @@ class ServerConfig:
 
 @dataclass
 class LLMConfig:
-    type: str = 'openai'
-    model: str = 'gpt-4o'
-    base_url: str = 'https://api.openai.com/v1'
+    provider: str = 'deepseek'
 
 
 @dataclass
@@ -72,9 +70,7 @@ def load_config(path: str = 'agent-server.yaml') -> AppConfig:
     if 'llm' in data:
         llm = data['llm']
         app.llm = LLMConfig(
-            type=llm.get('type', 'openai'),
-            model=llm.get('model', 'gpt-4o'),
-            base_url=llm.get('base_url', 'https://api.openai.com/v1'),
+            provider=llm.get('provider', 'deepseek'),
         )
 
     if 'session' in data:

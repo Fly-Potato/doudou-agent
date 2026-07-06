@@ -7,7 +7,7 @@ import logging
 from collections.abc import AsyncIterator
 from typing import Any
 
-from agent.llm import LLMProvider, create_provider
+from agent.llm import LLMProvider
 from agent.session import SessionManager
 from config import AppConfig
 from event import EventBus
@@ -30,9 +30,16 @@ class AgentLoop:
         self._registry = registry
         self._event_bus = event_bus
         self._sessions = SessionManager(max_messages=config.session.history_max_messages)
-        self._provider: LLMProvider = create_provider(config.llm)
 
-    async def run(self, session_id: SessionId, user_content: str) -> AsyncIterator[str]:
+    async def run(
+        self,
+        session_id: SessionId,
+        user_content: str,
+        *,
+        provider: LLMProvider,
+        model: str,
+        api_key: str,
+    ) -> AsyncIterator[str]:
         """执行 Agent 循环，yield SSE 格式的事件字符串"""
         tool_rounds = 0
         max_rounds = self._config.session.max_tool_rounds
@@ -55,7 +62,9 @@ class AgentLoop:
                 full_content = ''
                 tool_calls: list[dict[str, Any]] | None = None
 
-                async for chunk in self._provider.chat_completion(messages, tools):
+                async for chunk in provider.chat_completion(
+                    messages, tools, model=model, api_key=api_key
+                ):
                     if chunk['type'] == 'token':
                         full_content += chunk['content']
                         data = json.dumps({'content': chunk['content']}, ensure_ascii=False)
