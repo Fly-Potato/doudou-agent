@@ -6,7 +6,8 @@ import logging
 import sys
 from pathlib import Path
 
-from plugin.base import Plugin
+from doudou_agent_sdk import Plugin
+
 from plugin.registry import ProviderRegistry, ToolRegistry
 
 logger = logging.getLogger(__name__)
@@ -147,6 +148,9 @@ class PluginManager:
                 provider_count,
             )
             return inst
+        except ValueError:
+            logger.critical('Provider 重名，服务器终止启动')
+            raise
         except Exception:
             logger.exception('插件 %s 加载失败', name)
             return None

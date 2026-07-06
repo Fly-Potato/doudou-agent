@@ -4,8 +4,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from doudou_agent_sdk import Tool
 
-from plugin.base import Tool
 from plugin.manager import PluginManager
 from plugin.registry import ToolRegistry
 

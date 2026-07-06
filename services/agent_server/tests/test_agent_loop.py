@@ -6,11 +6,11 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 import pytest
+from doudou_agent_sdk import Tool
 
 from agent.loop import AgentLoop
 from config import AppConfig
 from event import EventBus
-from plugin.base import Tool
 from plugin.registry import ToolRegistry
 from schemas import SessionId
 

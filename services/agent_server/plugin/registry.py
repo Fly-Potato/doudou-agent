@@ -3,8 +3,9 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from doudou_agent_sdk import Tool
+
 from agent.llm.base import LLMProvider
-from plugin.base import Tool
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ class ProviderRegistry:
 
     def register(self, provider: LLMProvider) -> None:
         if provider.id in self._providers:
-            logger.warning("Provider '%s' 被覆盖", provider.id)
+            raise ValueError(f"Provider '{provider.id}' 重名，已存在同名 Provider")
         self._providers[provider.id] = provider
 
     def get(self, name: str) -> LLMProvider | None:

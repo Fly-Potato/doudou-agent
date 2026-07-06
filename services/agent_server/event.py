@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from plugin.base import Plugin
+from doudou_agent_sdk import Plugin
+
 from schemas import SessionId
 
 

@@ -1,4 +1,4 @@
-from plugin.base import Plugin, Tool
+from doudou_agent_sdk import Plugin, Tool
 
 
 class PingPongPlugin(Plugin):

@@ -1,5 +1,4 @@
-from agent.llm.openai import OpenAICompatibleProvider
-from plugin.base import Plugin, Tool
+from doudou_agent_sdk import OpenAICompatibleProvider, Plugin, Tool
 
 
 class DeepSeekProvider(OpenAICompatibleProvider):

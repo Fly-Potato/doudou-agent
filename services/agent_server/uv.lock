@@ -167,11 +167,15 @@ name = "doudou-agent-sdk"
 version = "0.1.0"
 source = { directory = "../../libs/doudou-agent-sdk" }
 dependencies = [
+    { name = "openai" },
     { name = "pydantic" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pydantic", specifier = ">=2.0" }]
+requires-dist = [
+    { name = "openai", specifier = ">=1.0.0" },
+    { name = "pydantic", specifier = ">=2.0" },
+]
 
 [[package]]
 name = "fastapi"
