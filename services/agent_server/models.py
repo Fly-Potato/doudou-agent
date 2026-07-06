@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+import zoneinfo
+from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -10,6 +11,21 @@ class Base(DeclarativeBase):
     pass
 
 
+# 模块级时区，由 configure_timezone() 初始化
+_configured_tz = zoneinfo.ZoneInfo('UTC')
+
+
+def configure_timezone(tz_name: str) -> None:
+    """由 main.py 在启动时调用，设置 ORM 模型使用的时区"""
+    global _configured_tz
+    _configured_tz = zoneinfo.ZoneInfo(tz_name)
+
+
+def _now() -> datetime:
+    """使用配置的时区返回当前时间"""
+    return datetime.now(_configured_tz)
+
+
 class Token(Base):
     __tablename__ = 'tokens'
 
@@ -17,7 +33,7 @@ class Token(Base):
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=lambda: datetime.now(UTC),
+        default=_now,
     )
 
 
@@ -31,5 +47,5 @@ class ProviderProfile(Base):
     is_default: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=lambda: datetime.now(UTC),
+        default=_now,
     )

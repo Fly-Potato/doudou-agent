@@ -16,7 +16,7 @@ from agent.loop import AgentLoop
 from auth import TokenAuth
 from config import load_config
 from event import EventBus
-from models import Base
+from models import Base, configure_timezone
 from plugin.manager import PluginManager
 from provider_store import ProviderStore
 from token_store import TokenStore
@@ -48,6 +48,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     global _agent_loop, _token_auth, _plugin_manager, _session_factory
 
     config = load_config()
+    configure_timezone(config.timezone)
 
     _engine = None
     _session_factory = None
@@ -186,6 +187,7 @@ def serve_cmd(_args: argparse.Namespace) -> None:
     import uvicorn
 
     config = load_config()
+    configure_timezone(config.timezone)
     uvicorn.run(
         'main:app',
         host=config.server.host,

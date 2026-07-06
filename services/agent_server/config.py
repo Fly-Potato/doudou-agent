@@ -43,6 +43,7 @@ class AppConfig:
     session: SessionConfig = field(default_factory=SessionConfig)
     auth: AuthConfig = field(default_factory=AuthConfig)
     plugin: PluginSettings = field(default_factory=PluginSettings)
+    timezone: str = 'UTC'  # ORM 默认时区，例如 'Asia/Shanghai'
 
 
 def _substitute_env_vars(text: str) -> str:
@@ -90,5 +91,8 @@ def load_config(path: str = 'agent-server.yaml') -> AppConfig:
         app.plugin = PluginSettings(
             external_dirs=p.get('external_dirs', []),
         )
+
+    if 'timezone' in data:
+        app.timezone = data['timezone']
 
     return app

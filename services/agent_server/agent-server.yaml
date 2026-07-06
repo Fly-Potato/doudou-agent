@@ -13,6 +13,8 @@ session:
 auth:
   db_url: 'sqlite+aiosqlite:///tokens.db'
 
+timezone: 'UTC' # 例如 'Asia/Shanghai'
+
 plugin:
   external_dirs:
     - '/plugins'

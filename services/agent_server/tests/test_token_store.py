@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import pytest
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from models import Base
+from models import Base, Token, configure_timezone
 from token_store import TokenStore
 
 
@@ -59,6 +62,35 @@ class TestTokenStore:
         assert deleted
         remaining = await store.list_tokens(session)
         assert len(remaining) == 0
+
+    async def test_created_at_timezone_is_utc(self, store_and_session):
+        """created_at 默认使用 UTC 时区"""
+        before = datetime.now(UTC)
+        configure_timezone('UTC')
+        store, session = store_and_session
+        await store.create_token(session)
+        result = await session.execute(select(Token).order_by(Token.id))
+        token = result.scalars().first()
+        assert token is not None
+        # SQLite 不保留 tzinfo，但时间值应接近当前 UTC 时间
+        offset = abs((token.created_at - before.replace(tzinfo=None)).total_seconds())
+        assert offset < 5, f'created_at 偏移过大: {offset} 秒'
+
+    async def test_configured_timezone_affects_created_at(self, store_and_session):
+        """切换时区后 created_at 的时间偏移不同"""
+        configure_timezone('UTC')
+        store, session = store_and_session
+        await store.create_token(session)
+        configure_timezone('Asia/Shanghai')
+        await store.create_token(session)
+
+        result = await session.execute(select(Token).order_by(Token.id))
+        tokens = result.scalars().all()
+        assert len(tokens) == 2
+        # UTC token 和 Asia/Shanghai token 应相差约 8 小时
+        diff = (tokens[1].created_at - tokens[0].created_at).total_seconds()
+        assert 28000 < diff < 29000, f'预期 8 小时偏移，实际 {diff} 秒'
+        configure_timezone('UTC')
 
     async def test_delete_non_existent_token(self, store_and_session):
         """删除不存在的 token 返回 False"""
