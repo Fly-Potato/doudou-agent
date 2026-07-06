@@ -8,7 +8,6 @@ def create_provider(config: LLMConfig) -> LLMProvider:
         return OpenAIProvider(
             model=config.model,
             base_url=config.base_url,
-            api_key=config.api_key,
         )
     raise ValueError(f'不支持的 LLM 类型: {config.type}')
 

@@ -157,7 +157,7 @@ def serve_cmd(_args: argparse.Namespace) -> None:
 
     config = load_config()
     uvicorn.run(
-        app,
+        'main:app',
         host=config.server.host,
         port=config.server.port,
         reload=True,

@@ -6,7 +6,6 @@ llm:
   type: openai
   model: gpt-4o
   base_url: https://api.openai.com/v1
-  api_key: ${OPENAI_API_KEY}
 
 session:
   max_tool_rounds: 10

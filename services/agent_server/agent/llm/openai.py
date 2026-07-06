@@ -9,17 +9,28 @@ from agent.llm.base import LLMProvider
 
 
 class OpenAIProvider(LLMProvider):
-    """OpenAI 兼容 Provider，通过 base_url 适配 DeepSeek/Ollama/OpenRouter 等"""
+    """OpenAI 兼容 Provider，通过 base_url 适配 DeepSeek/Ollama/OpenRouter 等
 
-    def __init__(self, model: str, base_url: str, api_key: str, **kwargs: Any) -> None:
+    客户端在首次调用 chat_completion 时创建，允许服务器启动时不配置 API key。
+    api_key 由 openai SDK 自动从 OPENAI_API_KEY 环境变量读取。
+    """
+
+    def __init__(self, model: str, base_url: str, **kwargs: Any) -> None:
         self._model = model
-        self._client = openai.AsyncOpenAI(base_url=base_url, api_key=api_key)
+        self._base_url = base_url
         self._extra_kwargs = kwargs
+        self._client: openai.AsyncOpenAI | None = None
+
+    def _get_client(self) -> openai.AsyncOpenAI:
+        if self._client is None:
+            self._client = openai.AsyncOpenAI(base_url=self._base_url)
+        return self._client
 
     async def chat_completion(
         self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]
     ) -> AsyncIterator[dict[str, Any]]:
-        stream = await self._client.chat.completions.create(
+        client = self._get_client()
+        stream = await client.chat.completions.create(
             model=self._model,
             messages=messages,
             tools=tools if tools else openai.NOT_GIVEN,

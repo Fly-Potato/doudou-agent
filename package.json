@@ -14,10 +14,9 @@
     "dev": "turbo run dev --parallel",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "format:py": "cd services/agent_server && uv run ruff format . ../../libs/doudou-agent-sdk ../../libs/doudou-demo",
-    "format:py:check": "cd services/agent_server && uv run ruff format --check . ../../libs/doudou-agent-sdk ../../libs/doudou-demo",
-    "lint": "pnpm run format:check && pnpm run lint:py && turbo run lint",
-    "lint:py": "cd services/agent_server && uv run ruff check . ../../libs/doudou-agent-sdk ../../libs/doudou-demo",
+    "format:py": "cd services/agent_server && uv run ruff format . ../../libs/doudou-agent-sdk",
+    "format:py:check": "cd services/agent_server && uv run ruff format --check . ../../libs/doudou-agent-sdk",
+    "lint:py": "cd services/agent_server && uv run ruff check . ../../libs/doudou-agent-sdk",
     "setup:hooks": "git config core.hooksPath .githooks",
     "test": "pnpm run check:structure && turbo run test",
     "typecheck": "turbo run typecheck"

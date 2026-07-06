@@ -19,7 +19,6 @@ class LLMConfig:
     type: str = 'openai'
     model: str = 'gpt-4o'
     base_url: str = 'https://api.openai.com/v1'
-    api_key: str = ''
 
 
 @dataclass
@@ -55,16 +54,10 @@ def _substitute_env_vars(text: str) -> str:
     return re.sub(r'\$\{(\w+)\}', replacer, text)
 
 
-def _apply_env_defaults(config: AppConfig) -> AppConfig:
-    if not config.llm.api_key:
-        config.llm.api_key = os.environ.get('OPENAI_API_KEY', '')
-    return config
-
-
 def load_config(path: str = 'agent-server.yaml') -> AppConfig:
     config_path = Path(path)
     if not config_path.exists():
-        return _apply_env_defaults(AppConfig())
+        return AppConfig()
 
     raw = config_path.read_text(encoding='utf-8')
     raw = _substitute_env_vars(raw)
@@ -82,7 +75,6 @@ def load_config(path: str = 'agent-server.yaml') -> AppConfig:
             type=llm.get('type', 'openai'),
             model=llm.get('model', 'gpt-4o'),
             base_url=llm.get('base_url', 'https://api.openai.com/v1'),
-            api_key=llm.get('api_key', ''),
         )
 
     if 'session' in data:
@@ -103,4 +95,4 @@ def load_config(path: str = 'agent-server.yaml') -> AppConfig:
             external_dirs=p.get('external_dirs', []),
         )
 
-    return _apply_env_defaults(app)
+    return app
