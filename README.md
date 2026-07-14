@@ -87,6 +87,32 @@ cd services/agent_server && uv sync
 The `setup:hooks` command activates `.githooks/pre-commit`, which runs `lint-staged` on staged
 files. Commit the hook as executable on POSIX systems.
 
+## Git 提交规范
+
+提交信息采用 Conventional Commits 格式：
+
+```text
+<type>: <中文动作式描述>
+```
+
+常用类型如下：
+
+- `feat`：新增功能
+- `fix`：修复问题
+- `refactor`：重构代码，不改变功能
+- `docs`：仅修改文档
+- `test`：新增或修改测试
+- `chore`：维护构建、依赖或工具配置
+
+描述应使用中文、简洁明确，并以动作式短语说明变更内容。例如：
+
+```text
+feat: 新增可配置时区支持
+fix: 修复流式响应断线处理
+refactor: 下沉 LLM Provider 到 SDK
+docs: 完善 agent-server 服务文档
+```
+
 ## Commands
 
 | Command              | Purpose                                                                        |
