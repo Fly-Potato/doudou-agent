@@ -2,7 +2,7 @@
 
 ## 1. 系统概览
 
-agent-server 是 doudou-agent 的 AI 后端服务，采用**插件式架构**。中枢负责 AI 对话循环，插件通过 `entry_points` 注册工具（Tool）和技能（Skill），扩展具体业务能力。
+agent-server 是 doudou-agent 的 AI 后端服务，采用**插件式架构**。中枢负责 AI 对话循环，插件通过外部目录扫描注册工具（Tool）和技能（Skill），扩展具体业务能力。
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -19,7 +19,7 @@ agent-server 是 doudou-agent 的 AI 后端服务，采用**插件式架构**。
 │                           │                                  │
 │  ┌────────────────────────┴────────────────────────┐         │
 │  │              PluginManager                       │         │
-│  │   entry_points 发现 → on_load → register_tools   │         │
+│  │   目录扫描 → on_load → register_tools            │         │
 │  └────────────────────────┬────────────────────────┘         │
 │                           │                                  │
 │     ┌─────────┬──────────┼──────────┬──────────┐             │
@@ -82,23 +82,23 @@ SSE 流 (token → tool_call → tool_result → done)
 
 `services/agent_server/plugin/manager.py`
 
-通过 Python `importlib.metadata.entry_points` 发现所有注册到 `doudou_agent.plugins` 组的插件类，根据 `agent-server.yaml` 配置过滤并加载。
+扫描 `agent-server.yaml` 中 `plugin.external_dirs` 指定目录的一级子目录，查找其中的 `__init__.py` 和 `Plugin` 子类并加载。
 
 **加载流程：**
 
 ```
-读取 YAML plugins 列表
+读取 YAML plugin.external_dirs
     │
     ▼
-调用 entry_points(group="doudou_agent.plugins")
+扫描外部插件目录
     │
     ▼
-过滤已安装与否、enabled 状态
+过滤隐藏目录、非目录和缺少 `__init__.py` 的目录
     │
     ▼
-对每个启用的插件：
+对每个发现的插件：
   1. 实例化插件类
-  2. 调用 on_load(config, registry)
+  2. 调用 on_load(config)
   3. 调用 register_tools() → 注册到 ToolRegistry
   4. 调用 register_skills() → 注册到 SkillRegistry
     │
@@ -271,7 +271,7 @@ SQLAlchemy 的 `db_url` 前缀决定数据库类型：
 
 ```
 services/agent_server/
-├── pyproject.toml                    # 项目配置、依赖、entry_point 声明
+├── pyproject.toml                    # 项目配置和依赖
 ├── agent-server.yaml                 # 服务配置文件
 ├── README.md
 ├── docs/
@@ -293,7 +293,6 @@ services/agent_server/
 ├── event.py                          # EventBus 钩子总线
 ├── plugin/
 │   ├── __init__.py
-│   ├── base.py                       # Plugin ABC, Tool, Skill 基类
 │   ├── manager.py                    # PluginManager 发现/加载
 │   └── registry.py                   # ToolRegistry 工具注册表
 └── agent/
@@ -316,10 +315,7 @@ server:
   port: 8000 # 监听端口，默认 8000
 
 llm:
-  type: openai # Provider 类型：openai | anthropic（预留）
-  model: gpt-4o # 模型名
-  base_url: https://api.openai.com/v1 # API 地址，可指向兼容服务
-  api_key: ${OPENAI_API_KEY} # API 密钥，支持 ${ENV} 引用
+  provider: deepseek # Provider 名称，由内置或外部插件注册
 
 session:
   max_tool_rounds: 10 # 单条消息最大工具调用轮数
@@ -329,11 +325,9 @@ session:
 auth:
   db_url: 'sqlite+aiosqlite:///tokens.db' # 数据库连接。空值跳过认证，开发用 SQLite，生产用 PostgreSQL
 
-plugins:
-  - name: doudou-todo
-    enabled: true
-    config:
-      db_url: 'postgresql://localhost/todo'
+plugin:
+  external_dirs:
+    - '/plugins'
 
 mcp: # MCP 服务器配置（内置插件）
   servers:

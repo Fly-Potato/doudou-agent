@@ -2,7 +2,7 @@
 
 ## 1. 概述
 
-插件（Plugin）是 agent-server 扩展业务能力的标准方式。插件是实现了 `Plugin` 基类的 Python 包，通过 `entry_point` 注册到中枢，由 `PluginManager` 在启动时发现并加载。
+插件（Plugin）是 agent-server 扩展业务能力的标准方式。插件是实现了 SDK 中 `Plugin` 基类的 Python 包，放在 `agent-server.yaml` 配置的外部插件目录中，由 `PluginManager` 在启动时扫描并加载。
 
 中枢与插件的关系：
 
@@ -18,7 +18,7 @@
 doudou-todo/
 ├── pyproject.toml
 ├── doudou_todo/
-│   ├── __init__.py
+│   ├── __init__.py          # 导出 TodoPlugin
 │   └── plugin.py
 ```
 
@@ -32,19 +32,21 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "doudou-todo"
 version = "0.1.0"
-dependencies = ["agent-server"]
-
-[project.entry-points."doudou_agent.plugins"]
-doudou-todo = "doudou_todo.plugin:TodoPlugin"
+dependencies = ["doudou-agent-sdk"]
 ```
 
-`entry_point` 组名固定为 `doudou_agent.plugins`，等号左侧是插件名，右侧是插件类的完整导入路径。
+插件目录必须包含 `__init__.py`，并在其中导出 `Plugin` 子类。插件包需要能够导入 `doudou-agent-sdk`。
+
+```python
+# doudou_todo/__init__.py
+from .plugin import TodoPlugin
+```
 
 ### 2.3 实现插件类
 
 ```python
 # doudou_todo/plugin.py
-from agent_server.plugin.base import Plugin, Tool
+from doudou_agent_sdk import Plugin, Tool
 
 
 class TodoPlugin(Plugin):
@@ -76,14 +78,12 @@ class TodoPlugin(Plugin):
         ]
 ```
 
-### 2.4 在 agent-server.yaml 中启用
+### 2.4 配置插件目录
 
 ```yaml
-plugins:
-  - name: doudou-todo
-    enabled: true
-    config:
-      db_url: 'sqlite:///todos.db'
+plugin:
+  external_dirs:
+    - '/plugins'
 ```
 
 ## 3. Plugin 接口
@@ -95,7 +95,7 @@ class Plugin(ABC):
     @property
     @abstractmethod
     def name(self) -> str:
-        """插件唯一标识，需与 YAML 中 plugins[].name 匹配"""
+        """插件唯一标识"""
         ...
 
     @abstractmethod
@@ -109,8 +109,8 @@ class Plugin(ABC):
         """返回插件提供的技能列表"""
         return []
 
-    async def on_load(self, config: dict, registry: ToolRegistry | None = None) -> None:
-        """插件加载时调用，config 来自 YAML plugins[].config"""
+    async def on_load(self, config: PluginConfig | dict[str, Any] | None = None) -> None:
+        """插件加载时调用"""
 
     async def on_shutdown(self) -> None:
         """服务关闭时调用，释放资源（数据库连接、网络连接等）"""
@@ -246,45 +246,30 @@ class TodoPlugin(Plugin):
 
 ## 6. 配置
 
-在 `agent-server.yaml` 中配置插件：
+在 `agent-server.yaml` 中配置外部插件目录：
 
 ```yaml
-plugins:
-  - name: doudou-todo
-    enabled: true # 设为 false 可禁用已安装插件
-    config: # 传递给 on_load(config)
-      db_url: 'sqlite:///todos.db'
-      max_items: 100
-
-  - name: doudou-search
-    enabled: false
-    config: {}
+plugin:
+  external_dirs:
+    - '/plugins'
 ```
 
-- `name` 必须与 `@property name` 返回的值一致
-- `config` 字典在 `on_load(config)` 时传入，格式由插件自己定义
-- `${ENV_VAR}` 语法可在 config 中使用，启动时自动替换
+- `external_dirs` 下的每个一级子目录都必须包含 `__init__.py`
+- 插件目录中必须定义一个 `Plugin` 子类
+- 当前版本按目录加载插件，不支持通过 YAML 单独启用或禁用插件
 
 ## 7. 发布与分发
 
 插件作为独立 Python 包发布：
 
 1. 包名建议使用 `doudou-<name>` 命名空间
-2. 声明依赖 `agent-server`（版本建议宽松，如 `>=0.1`）
-3. 注册 `entry_point` 到组 `doudou_agent.plugins`
-4. 用户通过 pip/uv 安装后，在 `agent-server.yaml` 启用即可
+2. 声明依赖 `doudou-agent-sdk`
+3. 将插件包目录挂载或复制到 `external_dirs` 指定的目录
+4. 重启服务，由 `PluginManager` 扫描并加载
 
-```toml
-[project.entry-points."doudou_agent.plugins"]
-doudou-todo = "doudou_todo.plugin:TodoPlugin"
-```
-
-多个插件可以在同一包中注册：
-
-```toml
-[project.entry-points."doudou_agent.plugins"]
-doudou-todo-core = "doudou_todo.plugin:TodoPlugin"
-doudou-todo-ai = "doudou_todo.plugin:AITodoPlugin"
+```text
+/plugins/doudou_todo/__init__.py
+/plugins/doudou_search/__init__.py
 ```
 
 ## 8. 完整示例
@@ -293,7 +278,7 @@ doudou-todo-ai = "doudou_todo.plugin:AITodoPlugin"
 
 ```python
 # doudou_todo/plugin.py
-from agent_server.plugin.base import Plugin, Tool, Skill
+from doudou_agent_sdk import Plugin, Skill, Tool
 
 # 模拟数据库
 _TODOS: list[dict] = []

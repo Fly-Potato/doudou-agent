@@ -36,7 +36,7 @@ depend on browser APIs, React Native APIs, Android/iOS code, Tauri APIs, or Rust
 `services/agent_server/` 是 doudou-agent 的 AI 后端服务，采用插件式架构设计：
 
 - **中枢** 负责对话循环、LLM 调用、工具调度和 SSE 流式响应
-- **插件** 通过 Python entry_points 注册工具（Tool）和技能（Skill），支持自由开发
+- **插件** 通过 Python 包目录扫描注册工具（Tool）和技能（Skill），支持自由开发
 - **Skill** 按需加载的领域能力单元，含操作指令和关联工具，LLM 运行时决定激活
 - **MCP** 内置插件支持连接 Model Context Protocol 服务器，自动发现外部工具
 
@@ -44,7 +44,7 @@ depend on browser APIs, React Native APIs, Android/iOS code, Tauri APIs, or Rust
 
 ```bash
 cd services/agent_server
-# 1. 编辑 agent-server.yaml，填入 llm.api_key
+# 1. 编辑 agent-server.yaml，确认 llm.provider
 # 2. 生成访问令牌
 uv sync
 uv run agent-server generate-token   # 输出原始 token，请求 API 时使用
@@ -54,22 +54,20 @@ uv run agent-server serve
 
 ### 开发插件
 
-1. 新建 Python 包，继承 `agent_server.plugin.base.Plugin`
+1. 新建 Python 包，继承 `doudou_agent_sdk.Plugin`
 2. 实现 `name`、`register_tools()`，可选 `register_skills()` 和生命周期钩子
-3. 在 `pyproject.toml` 注册 entry_point：
+3. 将插件包放入 `plugin.external_dirs` 指定的目录，目录中包含 `__init__.py`：
 
-```toml
-[project.entry-points."doudou_agent.plugins"]
-my-plugin = "my_plugin.module:MyPlugin"
+```text
+/plugins/my_plugin/__init__.py
 ```
 
-4. 在 `agent-server.yaml` 中启用：
+4. 将插件目录加入 `agent-server.yaml` 的扫描路径：
 
 ```yaml
-plugins:
-  - name: my-plugin
-    enabled: true
-    config: {}
+plugin:
+  external_dirs:
+    - '/plugins'
 ```
 
 ### 技术栈
