@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from doudou_agent_sdk import Tool
 
+import plugin.manager as manager_module
 from plugin.manager import PluginManager
 from plugin.registry import ToolRegistry
 
@@ -121,14 +122,17 @@ class TestPluginManager:
         assert len(loaded) == 0
 
     @pytest.mark.asyncio
-    async def test_external_plugin_loads_from_dir(self, tmp_path: Path) -> None:
-        """外部插件能从包含 __init__.py 的目录成功加载"""
+    async def test_external_plugin_loads_from_fixed_dir(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """外部插件能从固定目录成功加载"""
         plugin_dir = tmp_path / 'my-external-test'
         plugin_dir.mkdir()
         (plugin_dir / '__init__.py').write_text(_PLUGIN_CODE)
 
+        monkeypatch.setattr(manager_module, '_EXTERNAL_PLUGINS_DIR', tmp_path)
         mgr = PluginManager(builtins_dir=str(tmp_path / 'empty-builtins'))
-        loaded = await mgr.load_all(external_dirs=[str(tmp_path)])
+        loaded = await mgr.load_all()
         assert len(loaded) == 1
         assert loaded[0].name == 'test-plugin'
         assert 'hello' in mgr.tool_registry

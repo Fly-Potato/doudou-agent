@@ -12,7 +12,6 @@ from agent.loop import AgentLoop
 from event import EventBus
 from plugin.registry import ToolRegistry
 from schemas import SessionId
-from settings import AppConfig
 
 
 class MockProvider:
@@ -39,12 +38,14 @@ class MockProvider:
             yield c
 
 
-def make_config(**overrides: Any) -> AppConfig:
-    config = AppConfig()
-    for key, value in overrides.items():
-        if hasattr(config.session, key):
-            setattr(config.session, key, value)
-    return config
+def make_loop(registry: ToolRegistry, event_bus: EventBus, **overrides: Any) -> AgentLoop:
+    return AgentLoop(
+        registry,
+        event_bus,
+        max_tool_rounds=overrides.get('max_tool_rounds', 10),
+        tool_timeout_sec=overrides.get('tool_timeout_sec', 30.0),
+        history_max_messages=overrides.get('history_max_messages', 50),
+    )
 
 
 class TestAgentLoop:
@@ -57,10 +58,9 @@ class TestAgentLoop:
             ]
         )
 
-        config = make_config()
         registry = ToolRegistry()
         event_bus = EventBus([])
-        loop = AgentLoop(config, registry, event_bus)
+        loop = make_loop(registry, event_bus)
 
         events: list[str] = []
         async for event_str in loop.run(
@@ -115,9 +115,8 @@ class TestAgentLoop:
             ],
         )
 
-        config = make_config()
         event_bus = EventBus([])
-        loop = AgentLoop(config, registry, event_bus)
+        loop = make_loop(registry, event_bus)
 
         events: list[str] = []
         async for event_str in loop.run(
@@ -171,9 +170,8 @@ class TestAgentLoop:
         registry = ToolRegistry()
         registry.register(tool)
 
-        config = make_config(max_tool_rounds=3)
         event_bus = EventBus([])
-        loop = AgentLoop(config, registry, event_bus)
+        loop = make_loop(registry, event_bus, max_tool_rounds=3)
 
         events: list[str] = []
         async for event_str in loop.run(

@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 # 内置插件目录
 _DEFAULT_BUILTINS_DIR = str(Path(__file__).resolve().parent.parent / 'builtins')
+# 外部插件固定挂载目录
+_EXTERNAL_PLUGINS_DIR = Path('/plugins')
 
 
 class PluginManager:
@@ -72,8 +74,8 @@ class PluginManager:
 
     # ── 加载入口 ────────────────────────────────────────
 
-    async def load_all(self, external_dirs: list[str] | None = None) -> list[Plugin]:
-        """加载所有插件：内置（builtins/）→ 外部（目录扫描）"""
+    async def load_all(self) -> list[Plugin]:
+        """加载所有插件：内置（builtins/）→ 固定外部目录（/plugins/）"""
         loaded: list[Plugin] = []
 
         # 1. 内置插件：扫描 builtins/
@@ -84,17 +86,15 @@ class PluginManager:
                 if plugin is not None:
                     loaded.append(plugin)
 
-        # 2. 外部插件：扫描 external_dirs
-        if external_dirs:
-            for dir_path in external_dirs:
-                root = Path(dir_path).resolve()
-                if not root.is_dir():
-                    logger.warning('外部插件目录 %s 不存在，跳过', root)
-                    continue
-                for subdir in sorted(root.iterdir()):
-                    plugin = await self._load_plugin_from_dir(subdir)
-                    if plugin is not None:
-                        loaded.append(plugin)
+        # 2. 外部插件：扫描固定目录
+        external_root = _EXTERNAL_PLUGINS_DIR.resolve()
+        if not external_root.is_dir():
+            logger.warning('外部插件目录 %s 不存在，跳过', external_root)
+            return loaded
+        for subdir in sorted(external_root.iterdir()):
+            plugin = await self._load_plugin_from_dir(subdir)
+            if plugin is not None:
+                loaded.append(plugin)
 
         return loaded
 

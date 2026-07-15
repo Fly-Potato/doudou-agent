@@ -44,29 +44,25 @@ depend on browser APIs, React Native APIs, Android/iOS code, Tauri APIs, or Rust
 
 ```bash
 cd services/agent_server
-# 1. 设置环境变量，确认 AGENT_SERVER_LLM_PROVIDER
+# 1. 设置数据库等运行时环境变量
 # 2. 生成访问令牌
 uv sync
 uv run agent-server generate-token   # 输出原始 token，请求 API 时使用
 # 3. 启动服务
-uv run agent-server serve
+uv run agent-server serve --host 0.0.0.0 --port 8888
 ```
 
 ### 开发插件
 
 1. 新建 Python 包，继承 `doudou_agent_sdk.Plugin`
 2. 实现 `name`、`register_tools()`，可选 `register_skills()` 和生命周期钩子
-3. 将插件包放入 `AGENT_SERVER_PLUGIN_EXTERNAL_DIRS` 指定的目录，目录中包含 `__init__.py`：
+3. 将插件包放入固定的 `/plugins` 目录，目录中包含 `__init__.py`：
 
 ```text
 /plugins/my_plugin/__init__.py
 ```
 
-4. 将插件目录加入 `AGENT_SERVER_PLUGIN_EXTERNAL_DIRS`：
-
-```powershell
-$env:AGENT_SERVER_PLUGIN_EXTERNAL_DIRS = '/plugins'
-```
+4. 重启服务，服务会自动扫描 `/plugins` 下的一级子目录。
 
 ### 技术栈
 

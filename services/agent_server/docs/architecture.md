@@ -82,12 +82,12 @@ SSE 流 (token → tool_call → tool_result → done)
 
 `services/agent_server/plugin/manager.py`
 
-扫描 `AGENT_SERVER_PLUGIN_EXTERNAL_DIRS` 指定目录的一级子目录，查找其中的 `__init__.py` 和 `Plugin` 子类并加载。
+扫描固定的 `/plugins` 目录的一级子目录，查找其中的 `__init__.py` 和 `Plugin` 子类并加载。
 
 **加载流程：**
 
 ```
-读取 settings.py 中的 plugin.external_dirs
+加载内置 builtins/ 和固定外部目录 /plugins
     │
     ▼
 扫描外部插件目录
@@ -272,7 +272,7 @@ SQLAlchemy 的 `db_url` 前缀决定数据库类型：
 ```
 services/agent_server/
 ├── pyproject.toml                    # 项目配置和依赖
-├── settings.py                       # 环境变量配置与 AppConfig
+├── settings.py                       # 扁平环境变量配置常量
 ├── README.md
 ├── docs/
 │   ├── plugin-spec.md                # 插件开发规范
@@ -306,24 +306,19 @@ services/agent_server/
 
 ## 6. 配置参考
 
-服务配置集中在 `settings.py`，通过环境变量覆盖默认值：
+服务运行参数集中在 `settings.py`，通过环境变量覆盖默认值；监听地址和端口由启动命令传入：
 
-| 环境变量                                    | 默认值                          | 说明                                     |
-| ------------------------------------------- | ------------------------------- | ---------------------------------------- |
-| `AGENT_SERVER_HOST`                         | `0.0.0.0`                       | 监听地址                                 |
-| `AGENT_SERVER_PORT`                         | `8888`                          | 监听端口                                 |
-| `AGENT_SERVER_LLM_PROVIDER`                 | `deepseek`                      | Provider 名称                            |
-| `AGENT_SERVER_SESSION_MAX_TOOL_ROUNDS`      | `10`                            | 单条消息最大工具调用轮数                 |
-| `AGENT_SERVER_SESSION_TOOL_TIMEOUT_SEC`     | `30`                            | 单个工具执行超时（秒）                   |
-| `AGENT_SERVER_SESSION_HISTORY_MAX_MESSAGES` | `50`                            | 会话保留的最大消息数                     |
-| `AGENT_SERVER_AUTH_DB_URL`                  | `sqlite+aiosqlite:///tokens.db` | 数据库连接，留空则跳过认证               |
-| `AGENT_SERVER_TIMEZONE`                     | `UTC`                           | ORM 默认时区                             |
-| `AGENT_SERVER_PLUGIN_EXTERNAL_DIRS`         | `/plugins`                      | 外部插件目录，多个目录使用系统路径分隔符 |
+| 环境变量                                    | 默认值                          | 说明                       |
+| ------------------------------------------- | ------------------------------- | -------------------------- |
+| `AGENT_SERVER_SESSION_MAX_TOOL_ROUNDS`      | `10`                            | 单条消息最大工具调用轮数   |
+| `AGENT_SERVER_SESSION_TOOL_TIMEOUT_SEC`     | `30`                            | 单个工具执行超时（秒）     |
+| `AGENT_SERVER_SESSION_HISTORY_MAX_MESSAGES` | `50`                            | 会话保留的最大消息数       |
+| `AGENT_SERVER_AUTH_DB_URL`                  | `sqlite+aiosqlite:///tokens.db` | 数据库连接，留空则跳过认证 |
+| `AGENT_SERVER_TIMEZONE`                     | `UTC`                           | ORM 默认时区               |
 
 例如：
 
 ```powershell
-$env:AGENT_SERVER_PORT = '8888'
 $env:AGENT_SERVER_AUTH_DB_URL = 'postgresql+asyncpg://user:pass@host/db'
-$env:AGENT_SERVER_PLUGIN_EXTERNAL_DIRS = '/plugins;C:\plugins'
+uv run agent-server serve --host 0.0.0.0 --port 8888
 ```

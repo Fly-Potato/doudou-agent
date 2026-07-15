@@ -34,14 +34,14 @@ uv sync
 
 ### 配置
 
-通过环境变量配置服务。未设置时使用以下默认值：
+通过环境变量配置运行时参数：
 
 ```powershell
-$env:AGENT_SERVER_HOST = '0.0.0.0'
-$env:AGENT_SERVER_PORT = '8888'
-$env:AGENT_SERVER_LLM_PROVIDER = 'deepseek'
+$env:AGENT_SERVER_SESSION_MAX_TOOL_ROUNDS = '10'
+$env:AGENT_SERVER_SESSION_TOOL_TIMEOUT_SEC = '30'
+$env:AGENT_SERVER_SESSION_HISTORY_MAX_MESSAGES = '50'
 $env:AGENT_SERVER_AUTH_DB_URL = 'sqlite+aiosqlite:///tokens.db'
-$env:AGENT_SERVER_PLUGIN_EXTERNAL_DIRS = '/plugins'
+$env:AGENT_SERVER_TIMEZONE = 'UTC'
 ```
 
 完整配置项见 `settings.py`。生产环境应通过部署平台注入环境变量，不要将数据库连接和令牌写入源码。
@@ -57,7 +57,7 @@ $env:AGENT_SERVER_PLUGIN_EXTERNAL_DIRS = '/plugins'
 
 ```bash
 # 启动服务
-uv run agent-server serve
+uv run agent-server serve --host 0.0.0.0 --port 8888
 
 # 生成认证令牌（首次使用）
 uv run agent-server generate-token
@@ -69,7 +69,7 @@ uv run agent-server list-tokens
 uv run agent-server delete-token 1
 ```
 
-服务默认监听 `http://localhost:8888`。
+服务监听地址和端口由 `serve --host --port` 指定。
 
 ## API
 
@@ -97,7 +97,8 @@ uv run agent-server delete-token 1
 ```json
 {
   "session_id": "s1",
-  "content": "帮我记录一条待办"
+  "content": "帮我记录一条待办",
+  "provider": "deepseek"
 }
 ```
 

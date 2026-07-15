@@ -2,7 +2,7 @@
 
 ## 1. 概述
 
-插件（Plugin）是 agent-server 扩展业务能力的标准方式。插件是实现了 SDK 中 `Plugin` 基类的 Python 包，放在 `AGENT_SERVER_PLUGIN_EXTERNAL_DIRS` 指定的外部插件目录中，由 `PluginManager` 在启动时扫描并加载。
+插件（Plugin）是 agent-server 扩展业务能力的标准方式。插件是实现了 SDK 中 `Plugin` 基类的 Python 包，放在固定的 `/plugins` 目录中，由 `PluginManager` 在启动时扫描并加载。
 
 中枢与插件的关系：
 
@@ -78,13 +78,9 @@ class TodoPlugin(Plugin):
         ]
 ```
 
-### 2.4 配置插件目录
+### 2.4 插件目录
 
-```yaml
-plugin:
-  external_dirs:
-    - '/plugins'
-```
+插件固定放置在 `/plugins` 目录，由服务启动时自动扫描。
 
 ## 3. Plugin 接口
 
@@ -246,13 +242,9 @@ class TodoPlugin(Plugin):
 
 ## 6. 配置
 
-通过 `AGENT_SERVER_PLUGIN_EXTERNAL_DIRS` 配置外部插件目录：
+外部插件固定放在 `/plugins` 目录：
 
-```powershell
-$env:AGENT_SERVER_PLUGIN_EXTERNAL_DIRS = '/plugins'
-```
-
-- `external_dirs` 下的每个一级子目录都必须包含 `__init__.py`
+- `/plugins` 下的每个一级子目录都必须包含 `__init__.py`
 - 插件目录中必须定义一个 `Plugin` 子类
 - 当前版本按目录加载插件，不支持单独启用或禁用插件
 
@@ -262,7 +254,7 @@ $env:AGENT_SERVER_PLUGIN_EXTERNAL_DIRS = '/plugins'
 
 1. 包名建议使用 `doudou-<name>` 命名空间
 2. 声明依赖 `doudou-agent-sdk`
-3. 将插件包目录挂载或复制到 `external_dirs` 指定的目录
+3. 将插件包目录挂载或复制到固定的 `/plugins` 目录
 4. 重启服务，由 `PluginManager` 扫描并加载
 
 ```text

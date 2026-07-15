@@ -12,13 +12,13 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
+import settings
 from agent.loop import AgentLoop
 from auth import TokenAuth
 from event import EventBus
 from models import Base, configure_timezone
 from plugin.manager import PluginManager
 from provider_store import ProviderStore
-from settings import load_settings
 from token_store import TokenStore
 
 logging.basicConfig(level=logging.INFO)
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 class ChatRequest(BaseModel):
     session_id: str
     content: str
-    provider: str = 'deepseek'
+    provider: str
     model: str = 'deepseek-chat'
 
 
@@ -47,27 +47,28 @@ async def verify_token(request: Request) -> None:
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     global _agent_loop, _token_auth, _plugin_manager, _session_factory
 
-    config = load_settings()
-    configure_timezone(config.timezone)
+    configure_timezone(settings.TIMEZONE)
 
     _engine = None
     _session_factory = None
     _token_store = None
-    if config.auth.db_url:
-        _engine = create_async_engine(config.auth.db_url)
+    if settings.AUTH_DB_URL:
+        _engine = create_async_engine(settings.AUTH_DB_URL)
         async with _engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         _session_factory = async_sessionmaker(_engine, expire_on_commit=False)
         _token_store = TokenStore()
 
     _plugin_manager = PluginManager()
-    await _plugin_manager.load_all(external_dirs=config.plugin.external_dirs)
+    await _plugin_manager.load_all()
 
     _token_auth = TokenAuth(_token_store, _session_factory)
     _agent_loop = AgentLoop(
-        config,
         _plugin_manager.tool_registry,
         EventBus(_plugin_manager.plugins),
+        max_tool_rounds=settings.MAX_TOOL_ROUNDS,
+        tool_timeout_sec=settings.TOOL_TIMEOUT_SEC,
+        history_max_messages=settings.HISTORY_MAX_MESSAGES,
     )
     logger.info('agent-server 启动完成，已加载 %d 个插件', len(_plugin_manager.plugins))
     yield
@@ -183,48 +184,46 @@ async def _run_delete_token(db_url: str, token_id: int) -> None:
         await engine.dispose()
 
 
-def serve_cmd(_args: argparse.Namespace) -> None:
+def serve_cmd(args: argparse.Namespace) -> None:
     import uvicorn
 
-    config = load_settings()
-    configure_timezone(config.timezone)
+    configure_timezone(settings.TIMEZONE)
     uvicorn.run(
         'main:app',
-        host=config.server.host,
-        port=config.server.port,
+        host=args.host,
+        port=args.port,
         reload=True,
     )
 
 
 def generate_token_cmd(_args: argparse.Namespace) -> None:
-    config = load_settings()
-    if not config.auth.db_url:
+    if not settings.AUTH_DB_URL:
         print('错误: 未配置 auth.db_url', file=sys.stderr)
         sys.exit(1)
-    asyncio.run(_run_generate_token(config.auth.db_url))
+    asyncio.run(_run_generate_token(settings.AUTH_DB_URL))
 
 
 def list_tokens_cmd(_args: argparse.Namespace) -> None:
-    config = load_settings()
-    if not config.auth.db_url:
+    if not settings.AUTH_DB_URL:
         print('错误: 未配置 auth.db_url', file=sys.stderr)
         sys.exit(1)
-    asyncio.run(_run_list_tokens(config.auth.db_url))
+    asyncio.run(_run_list_tokens(settings.AUTH_DB_URL))
 
 
 def delete_token_cmd(args: argparse.Namespace) -> None:
-    config = load_settings()
-    if not config.auth.db_url:
+    if not settings.AUTH_DB_URL:
         print('错误: 未配置 auth.db_url', file=sys.stderr)
         sys.exit(1)
-    asyncio.run(_run_delete_token(config.auth.db_url, args.id))
+    asyncio.run(_run_delete_token(settings.AUTH_DB_URL, args.id))
 
 
-def run() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog='agent-server')
     subparsers = parser.add_subparsers(dest='command')
 
     sp = subparsers.add_parser('serve', help='启动 HTTP 服务')
+    sp.add_argument('--host', required=True, help='监听地址')
+    sp.add_argument('--port', required=True, type=int, help='监听端口')
     sp.set_defaults(func=serve_cmd)
 
     sp = subparsers.add_parser('generate-token', help='生成新令牌')
@@ -236,6 +235,12 @@ def run() -> None:
     sp = subparsers.add_parser('delete-token', help='删除指定令牌')
     sp.add_argument('id', type=int, help='令牌 ID')
     sp.set_defaults(func=delete_token_cmd)
+
+    return parser
+
+
+def run() -> None:
+    parser = build_parser()
 
     args = parser.parse_args()
     if hasattr(args, 'func'):

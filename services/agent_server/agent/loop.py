@@ -12,7 +12,6 @@ from agent.session import SessionManager
 from event import EventBus
 from plugin.registry import ToolRegistry
 from schemas import Message, SessionId
-from settings import AppConfig
 
 logger = logging.getLogger(__name__)
 
@@ -22,14 +21,18 @@ class AgentLoop:
 
     def __init__(
         self,
-        config: AppConfig,
         registry: ToolRegistry,
         event_bus: EventBus,
+        *,
+        max_tool_rounds: int,
+        tool_timeout_sec: float,
+        history_max_messages: int,
     ) -> None:
-        self._config = config
         self._registry = registry
         self._event_bus = event_bus
-        self._sessions = SessionManager(max_messages=config.session.history_max_messages)
+        self._max_tool_rounds = max_tool_rounds
+        self._tool_timeout_sec = tool_timeout_sec
+        self._sessions = SessionManager(max_messages=history_max_messages)
 
     async def run(
         self,
@@ -42,8 +45,8 @@ class AgentLoop:
     ) -> AsyncIterator[str]:
         """执行 Agent 循环，yield SSE 格式的事件字符串"""
         tool_rounds = 0
-        max_rounds = self._config.session.max_tool_rounds
-        timeout = self._config.session.tool_timeout_sec
+        max_rounds = self._max_tool_rounds
+        timeout = self._tool_timeout_sec
 
         try:
             # 1-2. 接收消息，运行 on_message 钩子
