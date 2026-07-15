@@ -34,22 +34,17 @@ uv sync
 
 ### 配置
 
-复制或编辑 `agent-server.yaml`：
+通过环境变量配置服务。未设置时使用以下默认值：
 
-```yaml
-server:
-  host: '0.0.0.0'
-  port: 8000
-
-llm:
-  provider: deepseek
-
-auth:
-  db_url: 'sqlite+aiosqlite:///tokens.db' # 留空跳过认证
-
-plugin:
-  external_dirs: []
+```powershell
+$env:AGENT_SERVER_HOST = '0.0.0.0'
+$env:AGENT_SERVER_PORT = '8888'
+$env:AGENT_SERVER_LLM_PROVIDER = 'deepseek'
+$env:AGENT_SERVER_AUTH_DB_URL = 'sqlite+aiosqlite:///tokens.db'
+$env:AGENT_SERVER_PLUGIN_EXTERNAL_DIRS = '/plugins'
 ```
+
+完整配置项见 `settings.py`。生产环境应通过部署平台注入环境变量，不要将数据库连接和令牌写入源码。
 
 `auth.db_url` 支持任意 SQLAlchemy 兼容数据库：
 
@@ -74,7 +69,7 @@ uv run agent-server list-tokens
 uv run agent-server delete-token 1
 ```
 
-服务默认监听 `http://localhost:8000`。
+服务默认监听 `http://localhost:8888`。
 
 ## API
 

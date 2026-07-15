@@ -2,7 +2,7 @@
 
 ## 1. 概述
 
-插件（Plugin）是 agent-server 扩展业务能力的标准方式。插件是实现了 SDK 中 `Plugin` 基类的 Python 包，放在 `agent-server.yaml` 配置的外部插件目录中，由 `PluginManager` 在启动时扫描并加载。
+插件（Plugin）是 agent-server 扩展业务能力的标准方式。插件是实现了 SDK 中 `Plugin` 基类的 Python 包，放在 `AGENT_SERVER_PLUGIN_EXTERNAL_DIRS` 指定的外部插件目录中，由 `PluginManager` 在启动时扫描并加载。
 
 中枢与插件的关系：
 
@@ -152,7 +152,7 @@ on_load(config, registry)
 on_shutdown()
 ```
 
-多插件按 YAML 配置顺序依次执行钩子，前一个的返回值作为下一个的输入。
+多插件按目录扫描顺序依次执行钩子，前一个的返回值作为下一个的输入。
 
 ## 4. Tool 数据结构
 
@@ -246,17 +246,15 @@ class TodoPlugin(Plugin):
 
 ## 6. 配置
 
-在 `agent-server.yaml` 中配置外部插件目录：
+通过 `AGENT_SERVER_PLUGIN_EXTERNAL_DIRS` 配置外部插件目录：
 
-```yaml
-plugin:
-  external_dirs:
-    - '/plugins'
+```powershell
+$env:AGENT_SERVER_PLUGIN_EXTERNAL_DIRS = '/plugins'
 ```
 
 - `external_dirs` 下的每个一级子目录都必须包含 `__init__.py`
 - 插件目录中必须定义一个 `Plugin` 子类
-- 当前版本按目录加载插件，不支持通过 YAML 单独启用或禁用插件
+- 当前版本按目录加载插件，不支持单独启用或禁用插件
 
 ## 7. 发布与分发
 

@@ -26,7 +26,7 @@ uv run ruff check . && uv run ruff format --check .
 ## 架构关键点
 
 - **`AgentLoop`** (`agent/loop.py:20`): 核心运行时，每条 `/chat` 请求启动一次循环，SSE 推送 token / tool_call / tool_result / done / error 事件
-- **插件发现**: 扫描 `agent-server.yaml` 中 `plugin.external_dirs` 指定目录的一级子目录
+- **插件发现**: 扫描 `AGENT_SERVER_PLUGIN_EXTERNAL_DIRS` 指定目录的一级子目录
 - **工具 handler 签名**: `async (session_id: str, **params) -> Any`，`session_id` 由中枢自动注入，**不要在 JSON Schema 中声明**
 - **`EventBus`**: 按插件加载顺序串行调用插件钩子，前一个返回值作为下一个的输入
 - **`SessionManager`** (`agent/session.py`): 内存存储，连接断开历史丢失；按 `history_max_messages` 裁剪
@@ -34,7 +34,8 @@ uv run ruff check . && uv run ruff format --check .
 
 ## 配置
 
-- 配置文件 `agent-server.yaml`，支持 `${ENV_VAR}` 环境变量替换
+- 配置集中在 `settings.py`，通过 `AGENT_SERVER_*` 环境变量覆盖默认值
+- `AGENT_SERVER_PLUGIN_EXTERNAL_DIRS` 使用系统路径分隔符分隔多个目录
 - `auth.db_url` 为空字符串时**跳过认证**；开发用 SQLite，生产用 PostgreSQL
 - `llm.provider` 指定已注册的 Provider 名称，当前内置 `deepseek`
 - 外部插件目录中的每个一级子目录必须包含 `__init__.py` 和一个 `Plugin` 子类

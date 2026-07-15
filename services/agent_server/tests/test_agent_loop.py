@@ -9,10 +9,10 @@ import pytest
 from doudou_agent_sdk import Tool
 
 from agent.loop import AgentLoop
-from config import AppConfig
 from event import EventBus
 from plugin.registry import ToolRegistry
 from schemas import SessionId
+from settings import AppConfig
 
 
 class MockProvider:

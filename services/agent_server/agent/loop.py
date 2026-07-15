@@ -9,10 +9,10 @@ from typing import Any
 
 from agent.llm import LLMProvider
 from agent.session import SessionManager
-from config import AppConfig
 from event import EventBus
 from plugin.registry import ToolRegistry
 from schemas import Message, SessionId
+from settings import AppConfig
 
 logger = logging.getLogger(__name__)
 

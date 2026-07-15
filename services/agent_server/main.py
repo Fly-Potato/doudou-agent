@@ -14,11 +14,11 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from agent.loop import AgentLoop
 from auth import TokenAuth
-from config import load_config
 from event import EventBus
 from models import Base, configure_timezone
 from plugin.manager import PluginManager
 from provider_store import ProviderStore
+from settings import load_settings
 from token_store import TokenStore
 
 logging.basicConfig(level=logging.INFO)
@@ -47,7 +47,7 @@ async def verify_token(request: Request) -> None:
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     global _agent_loop, _token_auth, _plugin_manager, _session_factory
 
-    config = load_config()
+    config = load_settings()
     configure_timezone(config.timezone)
 
     _engine = None
@@ -186,7 +186,7 @@ async def _run_delete_token(db_url: str, token_id: int) -> None:
 def serve_cmd(_args: argparse.Namespace) -> None:
     import uvicorn
 
-    config = load_config()
+    config = load_settings()
     configure_timezone(config.timezone)
     uvicorn.run(
         'main:app',
@@ -197,7 +197,7 @@ def serve_cmd(_args: argparse.Namespace) -> None:
 
 
 def generate_token_cmd(_args: argparse.Namespace) -> None:
-    config = load_config()
+    config = load_settings()
     if not config.auth.db_url:
         print('错误: 未配置 auth.db_url', file=sys.stderr)
         sys.exit(1)
@@ -205,7 +205,7 @@ def generate_token_cmd(_args: argparse.Namespace) -> None:
 
 
 def list_tokens_cmd(_args: argparse.Namespace) -> None:
-    config = load_config()
+    config = load_settings()
     if not config.auth.db_url:
         print('错误: 未配置 auth.db_url', file=sys.stderr)
         sys.exit(1)
@@ -213,7 +213,7 @@ def list_tokens_cmd(_args: argparse.Namespace) -> None:
 
 
 def delete_token_cmd(args: argparse.Namespace) -> None:
-    config = load_config()
+    config = load_settings()
     if not config.auth.db_url:
         print('错误: 未配置 auth.db_url', file=sys.stderr)
         sys.exit(1)
