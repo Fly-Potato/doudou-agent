@@ -2,9 +2,7 @@
 
 > ⚠️ 项目处于早期开发阶段。API、配置格式、插件接口均可能发生不兼容变更。
 
-Platform-only monorepo foundation for future Python services and libraries, React Native mobile
-applications, and Tauri desktop applications. This repository intentionally contains no application,
-service, package, Cargo crate, Android project, iOS project, or Tauri `src-tauri` directory.
+doudou-agent 的 monorepo，包含 Python 服务、可复用库和桌面客户端基础。
 
 ## Toolchains
 
@@ -20,13 +18,13 @@ is the Python lockfile.
 
 ## Layout
 
-| Directory   | Future contents                                                                                  |
-| ----------- | ------------------------------------------------------------------------------------------------ |
-| `apps/`     | Product applications, such as `<product>-mobile` (React Native) and `<product>-desktop` (Tauri). |
-| `packages/` | Platform-neutral TypeScript packages.                                                            |
-| `services/` | Deployable Python services。当前：`agent-server` AI 后端服务。                                   |
-| `libs/`     | Python libraries, including `doudou-agent-sdk`（插件开发 SDK）和其他可复用库。                   |
-| `tooling/`  | Repository checks and maintenance tooling.                                                       |
+| Directory   | Future contents                                                                |
+| ----------- | ------------------------------------------------------------------------------ |
+| `apps/`     | 产品应用，当前包含 `doudou-agent-desktop`（Tauri + React）。                   |
+| `packages/` | Platform-neutral TypeScript packages.                                          |
+| `services/` | Deployable Python services。当前：`agent-server` AI 后端服务。                 |
+| `libs/`     | Python libraries, including `doudou-agent-sdk`（插件开发 SDK）和其他可复用库。 |
+| `tooling/`  | Repository checks and maintenance tooling.                                     |
 
 React Native and Tauri applications do not share UI packages. A shared TypeScript package must not
 depend on browser APIs, React Native APIs, Android/iOS code, Tauri APIs, or Rust bindings.
@@ -67,6 +65,22 @@ uv run agent-server serve --host 0.0.0.0 --port 8888
 ### 技术栈
 
 Python 3.12+, FastAPI, openai SDK, MCP SDK, SQLAlchemy 2.0, aiosqlite (开发), asyncpg (生产)
+
+## doudou-agent-desktop
+
+`apps/doudou-agent-desktop/` 是基于 Tauri 2、React 和 Vite 的桌面客户端。桌面端的 Web 前端与
+`src-tauri/` Rust 壳保持在同一应用目录中。
+
+```bash
+# 启动 Vite 前端
+pnpm --filter doudou-agent-desktop dev
+
+# 启动 Tauri 桌面应用
+pnpm run desktop:dev
+
+# 构建桌面安装包
+pnpm run desktop:build
+```
 
 ## First-time setup
 
@@ -127,9 +141,9 @@ the monorepo root and pnpm dependency layout.
 ### Tauri desktop app
 
 Create the app under `apps/<product>-desktop`. Keep its web frontend and `src-tauri/` Rust shell in
-the same application directory. Its `package.json` must provide `dev`, `lint`, `typecheck`, `test`,
-and `build` scripts; configure the Tauri `devUrl`, frontend distribution path, and pre-build commands
-within that app.
+the same application directory. Start with meaningful package scripts only; configure the Tauri
+`devUrl`, frontend distribution path, and pre-build commands within that app. Add lint, typecheck,
+or test scripts when the application has a real implementation and corresponding checks.
 
 ### Python service or library
 

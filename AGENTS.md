@@ -9,7 +9,7 @@
 - 客户端负责聊天交互、令牌配置和消息展示，不承载实际 AI 推理、工具调用或会话编排。
 - 服务端使用 Python，集中处理 AI 请求、会话编排、工具调用和流式响应。
 
-当前仓库只提供 monorepo 基座。除非任务明确要求，不创建应用、服务、Rust crate、Android 或 iOS 工程。
+当前仓库提供 monorepo 基座，并已包含 `apps/doudou-agent-desktop` 桌面端应用。除非任务明确要求，不新增其他应用、服务、Rust crate、Android 或 iOS 工程。
 
 ## 目录边界
 
@@ -18,6 +18,13 @@
 - `services/<name>`：可部署的 Python 服务。
 - `libs/<name>`：可复用的 Python 库。
 - `packages/<name>`：与平台无关的 TypeScript 包，例如协议类型或客户端 SDK。
+
+当前桌面端：
+
+- `apps/doudou-agent-desktop`：Tauri 2 + React + Vite 桌面客户端。
+- `pnpm run desktop:dev`：启动桌面壳和 Vite 开发服务。
+- `pnpm run desktop:build`：构建桌面安装包。
+- 桌面端暂时只维护有实际用途的 `dev`、`build`、`preview` 和 `tauri` 脚本；不要为了接入 Turbo 而添加空的 lint、typecheck 或 test 任务。
 
 不要让共享 TypeScript 包依赖浏览器、React Native、Tauri、Rust、Android 或 iOS API。桌面端和移动端不共享 UI 组件，除非后续明确设计跨端 UI 方案。
 

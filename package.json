@@ -9,6 +9,8 @@
   },
   "scripts": {
     "build": "turbo run build",
+    "desktop:dev": "pnpm --filter doudou-agent-desktop tauri dev",
+    "desktop:build": "pnpm --filter doudou-agent-desktop tauri build",
     "check": "pnpm run check:structure && pnpm run format:check && pnpm run lint:py && pnpm run format:py:check && turbo run lint typecheck test build",
     "check:structure": "node --test tooling/tests/scaffold.test.mjs",
     "dev": "turbo run dev --parallel",
