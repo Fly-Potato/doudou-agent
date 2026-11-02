@@ -12,7 +12,6 @@
 
 - `apps/doudou-agent-client`：Android/macOS 共用 Tauri 应用，前端与 `src-tauri/` 同目录。
 - `services/<name>`：可部署 Python 服务，当前为 `services/agent_server`。
-- `libs/<name>`：可复用 Python 库，当前为空。
 - `packages/<name>`：平台无关 TypeScript 包，当前为空；不得依赖 UI、Tauri 或原生平台 API。
 - `tooling/`：仓库质量工具。
 

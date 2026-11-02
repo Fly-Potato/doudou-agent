@@ -20,7 +20,6 @@ test('仓库基座包含必要目录与配置', () => {
     'apps/.gitkeep',
     'packages/.gitkeep',
     'services/.gitkeep',
-    'libs/.gitkeep',
     'mise.toml',
     'apps/doudou-agent-client/src-tauri/src/lib.rs',
     'services/agent_server/main.py',

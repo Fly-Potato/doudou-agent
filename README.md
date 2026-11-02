@@ -7,7 +7,6 @@
 - `apps/doudou-agent-client/`：Tauri 2 + React + TypeScript + Vite，Android 与 macOS 共用客户端。
 - `services/agent_server/`：FastAPI 服务，仅提供 `GET /health`；已声明 PydanticAI 精简依赖，尚未配置模型。
 - `packages/`：平台无关 TypeScript 包，当前为空。
-- `libs/`：可复用 Python 库，当前为空。
 - `tooling/`：仓库结构检查。
 
 后续架构为服务端运行 Agent，客户端执行设备工具；当前不实现聊天、认证、会话、工具路由、MCP 或数据库。
