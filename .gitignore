@@ -16,6 +16,9 @@ __pycache__/
 target/
 src-tauri/target/
 
+# 后端运行时用户数据库
+services/agent_server/data/
+
 # Generic build output and secrets
 dist/
 build/

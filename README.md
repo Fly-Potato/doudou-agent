@@ -1,15 +1,15 @@
 # doudou-agent
 
-个人 AI Agent 的 monorepo，目前仅提供可启动的最小骨架。
+个人 AI Agent 的 monorepo，当前包含客户端骨架和后端密钥认证。
 
 ## 结构
 
 - `apps/doudou-agent-client/`：Tauri 2 + React + TypeScript + Vite，Android 与 macOS 共用客户端。
-- `services/agent_server/`：FastAPI 服务，仅提供 `GET /health`；已声明 PydanticAI 精简依赖，尚未配置模型。
+- `services/agent_server/`：FastAPI 服务，提供管理员/普通用户密钥认证与用户密钥管理；PydanticAI 尚未配置模型。
 - `packages/`：平台无关 TypeScript 包，当前为空。
 - `tooling/`：仓库结构检查。
 
-后续架构为服务端运行 Agent，客户端执行设备工具；当前不实现聊天、认证、会话、工具路由、MCP 或数据库。
+后续架构为服务端运行 Agent，客户端执行设备工具；当前已实现基于 SQLite 的独立用户与密钥管理，尚未实现聊天、会话、工具路由或 MCP。
 
 ## 准备环境
 
@@ -25,13 +25,15 @@ mise exec -- pnpm run setup:hooks
 ## 启动
 
 ```sh
-# 后端，默认仅监听本机；无需模型密钥
+# 后端，先按服务 README 配置 AGENT_SERVER_ADMIN_KEY；无需模型密钥
 mise exec -- pnpm run server:dev
 # macOS 应用
 mise exec -- pnpm run desktop:dev
 # 仅前端预览开发
 mise exec -- pnpm --filter doudou-agent-client dev
 ```
+
+部署和认证配置见 [后端说明](services/agent_server/README.md)。
 
 健康检查地址为 `http://127.0.0.1:8000/health`，返回 `{"status":"ok"}`。
 
