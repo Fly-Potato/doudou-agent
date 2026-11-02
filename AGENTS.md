@@ -6,6 +6,8 @@
 
 当前仅搭建最小骨架，不增加聊天、认证、数据库、设备网关、MCP、插件框架或空占位抽象，除非任务明确要求。
 
+旧插件式架构已废弃，不恢复插件 SDK、目录扫描、动态加载或自建工具注册框架。后续 Agent 与工具使用 PydanticAI 原生能力，不沿用旧运行时抽象。
+
 ## 目录边界
 
 - `apps/doudou-agent-client`：Android/macOS 共用 Tauri 应用，前端与 `src-tauri/` 同目录。
