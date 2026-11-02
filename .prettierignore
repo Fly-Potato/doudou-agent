@@ -10,3 +10,6 @@ node_modules/
 target/
 uv.lock
 pnpm-lock.yaml
+
+# Tauri 自动生成的权限与配置 schema
+**/src-tauri/gen/schemas/

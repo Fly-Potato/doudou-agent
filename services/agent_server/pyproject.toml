@@ -1,38 +1,20 @@
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "agent-server"
 version = "0.1.0"
-description = "doudou-agent AI 后端服务"
+description = "Doudou Agent 后端骨架"
 requires-python = ">=3.12"
 dependencies = [
-    "doudou-agent-sdk",
-    "fastapi>=0.115.0",
-    "uvicorn[standard]>=0.34.0",
-    "openai>=1.0.0",
-    "sqlalchemy[asyncio]>=2.0",
-    "aiosqlite>=0.20",
-    "asyncpg>=0.30",
-    "tzdata>=2025",
+    "fastapi>=0.115,<1",
+    "pydantic-ai-slim>=2,<3",
+    "uvicorn>=0.34,<1",
 ]
-
-[tool.uv.sources]
-doudou-agent-sdk = { path = "../../libs/doudou-agent-sdk" }
-
-[tool.setuptools.packages.find]
-exclude = ["*"]
 
 [dependency-groups]
-dev = [
-    "pytest>=8.0",
-    "pytest-asyncio>=1.4.0",
-    "ruff>=0.15.20",
-]
+dev = ["httpx>=0.28,<1", "pytest>=8,<10", "ruff>=0.15"]
 
 [tool.pytest.ini_options]
-asyncio_mode = "auto"
+pythonpath = ["."]
+testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100

@@ -12,12 +12,6 @@ __pycache__/
 .ruff_cache/
 .mypy_cache/
 
-# React Native
-android/.gradle/
-android/app/build/
-ios/Pods/
-ios/build/
-
 # Tauri and Rust
 target/
 src-tauri/target/

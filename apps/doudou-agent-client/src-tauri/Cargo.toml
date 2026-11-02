@@ -1,0 +1,15 @@
+[package]
+name = "doudou-agent-client"
+version = "0.1.0"
+description = "Doudou Agent 跨平台客户端"
+edition = "2021"
+
+[lib]
+name = "doudou_agent_client_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
